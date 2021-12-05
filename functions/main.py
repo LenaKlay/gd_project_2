@@ -3,18 +3,16 @@
 """
 Created on Mon Aug 30 09:49:47 2021
 
-
-
 lena.klay@sorbonne-universite.fr
 """
 
-############################## Packages ############################################
+############################## Libraries ############################################
 
 import numpy as np
 import matplotlib.pyplot as plt
-#import matplotlib.colors as mcolors 
 import scipy.sparse as spa
 import scipy.sparse.linalg  as la
+import os
 
 ############################## Functions ############################################
 
@@ -172,11 +170,11 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a):
     prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
     if CI == "equal" :                              
         prop_gametes = np.ones((16,N+1))*(1/16)     
-    if CI == "ABCD global" : 
+    if CI == "ABCD_global" : 
         prop_gametes[15,:] = CI_prop_drive         
-    if CI == "ABCD left" : 
+    if CI == "ABCD_left" : 
         prop_gametes[15,0:N//2+1] = CI_prop_drive  
-    if CI == "ABCD center" : 
+    if CI == "ABCD_center" : 
         prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
     prop_gametes[0,:] = 1 - prop_gametes[15,:]
        
@@ -215,11 +213,13 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a):
         if t>=mod_t*nb_point and show_graph_t :  
             points = graph_t(X, t, prop_gametes, coef_gametes_couple, points, nb_point)
             nb_point += 1
-            
-      
+                  
     return(prop_gametes)  
 
 
+
+############################### Graph and saving figures ######################################
+    
 
 def graph_a(X, t, prop_gametes):
         fig, ax = plt.subplots()
@@ -243,6 +243,8 @@ def graph_a(X, t, prop_gametes):
         ax.grid()      
         ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, time = {int(t)}')   
         ax.legend()  
+        if save_fig :
+            save_figure(t, "graph_allele", r, gamma, sd, st, sp, dif, CI, CI_prop_drive) 
         plt.show() 
         
         
@@ -273,8 +275,26 @@ def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
         ax.grid()      
         ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, position = {position_t}, time = {int(t)}')   
         ax.legend()  
+        if save_fig :
+            save_figure(t, "graph_time", r, gamma, sd, st, sp, dif, CI, CI_prop_drive) 
         plt.show() 
         
+        
+def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive)   :           
+            if t == 0 : 
+                actual_dir = os.getcwd()
+                print ("The current working directory is %s" % actual_dir)
+                new_dir = f"../outputs/{graph_type}_r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"
+                try:
+                    os.mkdir(new_dir)
+                except OSError:
+                    print ("Creation of the directory %s failed" % new_dir)
+                else:
+                    print ("Successfully created the directory %s " % new_dir)
+                    
+            fig.savefig(f"../outputs/{graph_type}_r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/t_{t}.pdf")   
+         
+       
         
 ############################### CONTROLE AB ########################################
 
@@ -460,7 +480,7 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 dif = 0.1
 
 # Initial repartition
-CI = "ABCD center"     # "equal"  "ABCD global"  "ABCD left"  "ABCD center" 
+CI = "ABCD_center"     # "equal"  "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_prop_drive = 0.12   # Drive initial proportion in "ABCD global", "ABCD left" and "ABCD center"  
 CI_lenght = 20         # for "ABCD center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
@@ -478,6 +498,7 @@ show_graph_ini = True     # whether to show the allele graph or not at time t=0
 show_graph_t = False        # whether to show the graph in time or not
 mod_a = T/10                # time at which to draw allele graphics
 mod_t = T/50               # time points used to draw the graph in time
+save_fig = True        # save the figures (.pdf)
 
 # Which alleles to show in the allele graph
 WT = False             
