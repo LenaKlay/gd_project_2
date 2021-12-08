@@ -3,6 +3,8 @@
 """
 Created on Mon Aug 30 09:49:47 2021
 
+
+
 lena.klay@sorbonne-universite.fr
 """
 
@@ -244,7 +246,7 @@ def graph_a(X, t, prop_gametes):
         ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, time = {int(t)}')   
         ax.legend()  
         if save_fig :
-            save_figure(t, "graph_allele", r, gamma, sd, st, sp, dif, CI, CI_prop_drive) 
+            save_figure(t, "graph_allele", r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig) 
         plt.show() 
         
         
@@ -276,11 +278,11 @@ def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
         ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, position = {position_t}, time = {int(t)}')   
         ax.legend()  
         if save_fig :
-            save_figure(t, "graph_time", r, gamma, sd, st, sp, dif, CI, CI_prop_drive) 
+            save_figure(t, "graph_time", r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig) 
         plt.show() 
         
         
-def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive)   :           
+def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :           
             if t == 0 : 
                 actual_dir = os.getcwd()
                 print ("The current working directory is %s" % actual_dir)
@@ -481,8 +483,8 @@ dif = 0.1
 
 # Initial repartition
 CI = "ABCD_center"     # "equal"  "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_prop_drive = 0.12   # Drive initial proportion in "ABCD global", "ABCD left" and "ABCD center"  
-CI_lenght = 20         # for "ABCD center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+CI_prop_drive = 0.12   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
+CI_lenght = 20         # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
 T = 2000          # final time
