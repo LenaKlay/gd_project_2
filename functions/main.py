@@ -195,8 +195,8 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a):
     C1 = np.ones(N+1) 
     A = spa.spdiags([C1,C0,C1],[-1,0,1], N+1, N+1)          # 1D discrete Laplacian with Neumann boundary conditions (derivative=0)  
     
-    B = spa.identity(N+1)+((1-theta)*dt/dx**2)*A            # Matrix for the explicit side of the Crank Nicholson scheme  
-    B_ = spa.identity(N+1)-(theta*dt/dx**2)*A               # Matrix for the implicit side of the Crank Nicholson scheme  
+    B = spa.identity(N+1)+((1-theta)*dif*dt/dx**2)*A            # Matrix for the explicit side of the Crank Nicholson scheme  
+    B_ = spa.identity(N+1)-(theta*dif*dt/dx**2)*A               # Matrix for the implicit side of the Crank Nicholson scheme  
 
     # Evolution
     for t in np.linspace(dt,T,M) : 
@@ -497,10 +497,10 @@ theta = 0.5     # discretization in space : theta = 0.5 for Crank Nicholson
 # Graphics
 show_graph_a = True       # whether to show the allele graph or not
 show_graph_ini = True     # whether to show the allele graph or not at time t=0
-show_graph_t = False        # whether to show the graph in time or not
-mod_a = T/10                # time at which to draw allele graphics
-mod_t = T/50               # time points used to draw the graph in time
-save_fig = True        # save the figures (.pdf)
+show_graph_t = False      # whether to show the graph in time or not
+mod_a = T/10              # time at which to draw allele graphics
+mod_t = T/50              # time points used to draw the graph in time
+save_fig = True           # save the figures (.pdf)
 
 # Which alleles to show in the allele graph
 WT = False             
