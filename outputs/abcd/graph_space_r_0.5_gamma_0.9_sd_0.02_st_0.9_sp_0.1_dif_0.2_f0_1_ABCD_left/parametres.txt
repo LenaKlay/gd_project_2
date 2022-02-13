@@ -1,0 +1,14 @@
+Parametres : 
+r = 0.5 
+sd = 0.02 
+st = 0.9 
+sp = 0.1 
+dif = 0.2 
+gamma = 0.9 
+CI = ABCD_left 
+T = 8000 
+L = 2800 
+M = 32000 
+N = 2800 
+theta = 0.5 
+f0 = 1
