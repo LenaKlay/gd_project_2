@@ -74,7 +74,7 @@ def print_fitness() :
     return(new_list)
 
 
-def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a):   
+def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):   
    
     # Steps
     dt = T/M    # time
@@ -85,21 +85,24 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a):
     
     # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
     prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
+    #if CI == "equal" :                              
+    #    prop_gametes = np.ones((16,N+1))*(1/16)     
     if CI == "equal" :                              
-        prop_gametes = np.ones((16,N+1))*(1/16)     
-    if CI == "ABCD_global" : 
-        prop_gametes[15,:] = CI_prop_drive         
-    if CI == "ABCD_left" : 
+        prop_gametes[0:4,:] = np.ones((4,N+1))*(1/4)   
+    if CI == "left" : 
         prop_gametes[15,0:N//2+1] = CI_prop_drive  
-    if CI == "ABCD_center" : 
+    if CI == "left_cd" : 
+        prop_gametes[3,0:N//2+1] = CI_prop_drive
+    if CI == "center" : 
         prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
-    prop_gametes[0,:] = 1 - prop_gametes[15,:]
+    prop_gametes[0,:] = 1 - np.sum(prop_gametes[1:16,:], axis=0)
     
     # Speed of the wave, function of time
-    position = np.array([])             # list containing the first position where the proportion of wild alleles is higher than 0.5.
+    position = np.array([])             # list containing the first position where the proportion of wild alleles is higher than the treshold value.
     time = np.array([])                 # list containing the time at which we calculate the speed.
     speed_fct_of_time = np.array([])    # list containing the speed corresponding to the time list.
-         
+    treshold = 0.5                      # indicates which position of the wave we follow to compute the speed (first position where the C-D wave come under the threshold)    
+    
     # Spatial graph 
     nb_graph = 1
     if show_graph_ini :
@@ -128,23 +131,40 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a):
   
         for i in range(16) : 
             prop_gametes[i,:] = la.spsolve(B_, B.dot(prop_gametes[i,:]) + dt*reaction_term[i,:])
+        
+        if CI != "equal" :
+            # Position of the wave cd
+            wave_cd = np.dot((1-indexABCD)[2,:]*(1-indexABCD)[3,:],prop_gametes)
+            # we recorde the position only if the cd wave is still in the environment. We do not recorde the 0 position since the treshold value of the wave might be outside the window.            
+            if np.isin(True, wave_cd > treshold) and np.isin(True, wave_cd < 0.99) and np.where(wave_cd > treshold)[0][0] != 0 :  
+                # first position where the wave is under the treshold value
+                position = np.append(position, np.where(wave_cd > treshold)[0][0])   
+            # if the treshold value of the wave is outside the window, stop the simulation  
+            if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
+                print("t=",t)
+                break 
+        
+        # Speed of the C or D wave
+        #C_or_D = np.dot(indexABCD[2,:],prop_gametes)
+        # we recorde the position only if the C or D wave is still in the environment. We do not recorde the 1 position since the treshold value of the wave might be outside the window.            
+        #if np.isin(True, C_or_D < treshold) and np.isin(True, C_or_D > 0.99) and np.where(C_or_D < treshold)[0][0] != 1 :  
+        #    position = np.append(position,np.where(C_or_D < treshold)[0][0])   # first position where the wave is under the treshold value
+        # if the treshold value of the wave is outside the window, stop the simulation  
+        #if not(np.isin(False, C_or_D >treshold) and np.isin(False, C_or_D <treshold) ) :
+        #    print("t=",t)
+        #    break 
             
-        # speed of the C or D wave
-        C_or_D = np.dot(indexABCD[2,:],prop_gametes)
-        if np.isin(True, C_or_D < 0.5) and np.isin(True, C_or_D > 0.99) :  
-            position = np.append(position,np.where(C_or_D < 0.5)[0][0])   # first position where the wave is over 0.5
-          
         # spatial graph  
-        if t>=mod_a*nb_graph :  
+        if t>=mod_x*nb_graph :  
             if show_graph_x :
                 graph_x(X, t, prop_gametes)
             nb_graph += 1
-            # We calculate the speed each time we make a graph and store this speed.
-            if t >= T/10 :
-                time = np.append(time, t)
-                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position))*dx/dt)
-                # first line : time, second line : speed of the wave at the corresponding time
-            
+        # We calculate the speed each time we make a graph and store this speed.
+        if CI != "equal" and t >= T/10 :
+            # first line : time, second line : speed of the wave at the corresponding time
+            time = np.append(time, t)
+            speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position))*dx/dt)
+                        
         # time graph
         if t>=mod_t*nb_point and show_graph_t :  
             points = graph_t(X, t, prop_gametes, coef_gametes_couple, points, nb_point)
@@ -154,22 +174,23 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a):
     if show_graph_fin :   
         graph_x(X, T, prop_gametes)
    
-    # speed function of time (from 2*T/5 to T)
-    if np.shape(position)[0] != 0 :        
-        fig, ax = plt.subplots()
-        ax.plot(time, speed_fct_of_time) 
-        ax.set(xlabel='Time', ylabel='Speed', title = f'Speed function of time with f0={CI_prop_drive}')   
-        if save_fig :
-            fig.savefig(f"../outputs/graph_space_r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/speed_fct_time.pdf")   
-        plt.show() 
-    else :
-        print('No wave')
+    # speed function of time (from T/5 to T)
+    if CI != "equal" :
+        if np.shape(position)[0] != 0 :        
+            fig, ax = plt.subplots()
+            ax.plot(time, speed_fct_of_time) 
+            ax.set(xlabel='Time', ylabel='Speed', title = f'Speed function of time with f0={CI_prop_drive}')   
+            if save_fig :
+                fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/speed_fct_time.pdf")   
+            plt.show() 
+        else :
+            print('No wave')
         
-    file = open(f"../outputs/graph_space_r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/parametres.txt", "w") 
-    file.write(f"Parametres : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \ndif = {dif} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
+    file = open(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/parameters.txt", "w") 
+    file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \ndif = {dif} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
     file.close()
-        
-    return(prop_gametes)  
+    
+    return(prop_gametes, time, speed_fct_of_time)  
 
 
 
@@ -228,10 +249,10 @@ def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
         for i in range(len(lab)) : 
             ax.plot(values[0,:], values[i+1,:], color=col[i], label=lab[i], linewidth=3)
         ax.grid()      
-        ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, position = {focus_x}, time = {int(t)}')   
+        ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, position = {N//2+focus_x}, time = {int(t)}')   
         ax.legend()  
         if save_fig :
-            save_figure(t, "graph_time", r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig) 
+            fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/focus_on_one_site.pdf")   
         plt.show() 
         
         
@@ -239,16 +260,15 @@ def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig
             if t == 0 : 
                 actual_dir = os.getcwd()
                 print ("The current working directory is %s" % actual_dir)
-                new_dir = f"../outputs/{graph_type}_r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"
+                new_dir = f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"
                 try:
                     os.mkdir(new_dir)
                 except OSError:
                     print ("Creation of the directory %s failed" % new_dir)
                 else:
                     print ("Successfully created the directory %s " % new_dir)
-                    
-            fig.savefig(f"../outputs/{graph_type}_r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/t_{t}.pdf")   
-         
+            fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/t_{t}.pdf")  
+
        
 
 
@@ -271,25 +291,29 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 dif = 0.2
 
 # Initial repartition
-CI = "ABCD_left" #"ABCD_center"     # "equal"  "ABCD_global"  "ABCD_left"  "ABCD_center" 
+CI = "left_cd"     # "equal"   "left"  "center" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20         # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 8*8000         # final time
-L = 8*2800         # length of the spatial domain
-M = T*4          # number of time steps
-N = L          # number of spatial steps
+T = 400          # final time
+L = 100          # length of the spatial domain
+M = T*6          # number of time steps
+N = L            # number of spatial steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  
 
 # Graphics
-show_graph_x = True       # whether to show the graph in space or not
-show_graph_ini = True     # whether to show the allele graph or not at time t=0
-show_graph_fin = True     # whether to show the allele graph or not at time t=T
+show_graph_x = False       # whether to show the graph in space or not
+show_graph_ini = False     # whether to show the allele graph or not at time t=0
+show_graph_fin = False    # whether to show the allele graph or not at time t=T
+
 show_graph_t = False      # whether to show the graph in time or not
-mod_a = T/50              # time at which to draw allele graphics
-mod_t = T/50              # time points used to draw the graph in time
+graph_t_type = "ABCD"     # "fig4" or "ABCD"
+focus_x = 20              # where to look, on the x-axis (0 = center)
+
+mod_x = T               # time at which to draw allele graphics
+mod_t = T/50               # time points used to draw the graph in time
 save_fig = True           # save the figures (.pdf)
 
 # Which alleles to show in the graph
@@ -298,21 +322,32 @@ alleleA = True; alleleB = alleleA; alleleCD = alleleA
 checkab = False; ab = checkab; AbaB = ab; AB = ab 
 checkcd = False; cd = checkcd; CdcD = cd; CD = cd
 
-# What kind of graph in time
-graph_t_type = "ABCD"         # "fig4" or "ABCD"
-focus_x = 20               # where to look, on the x-axis (0 = center)
-
 
 ############################### Evolution ########################################
-   
-prop = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_a) 
+ 
+# prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
+
+I = 5  
+step_record = np.array([])  
+speed_record = np.array([])  
+for step in np.linspace(0.1, 3, 200) :
+    N = int(L/step)
+    step_record = np.append(step_record, step) 
+    prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
+    speed_record = np.append(speed_record, speed[-1]) 
+fig, ax = plt.subplots()
+ax.plot(step_record, speed_record) 
+ax.set(xlabel='N (size of a spatial step)', ylabel='Speed', title = f'Speed function of the spatial steps')   
+if save_fig :
+    fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/towards_discretization.pdf")   
+plt.show() 
 
 
 ############################### Control ########################################
 
 # Check ab
 if checkab : 
-    ab_,aB_,Ab_,AB_ = continuous_evolution_ab(r,sd,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_a,show_graph_x,ab,AbaB,AB)
+    ab_,aB_,Ab_,AB_ = continuous_evolution_ab(r,sd,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_x,show_graph_x,ab,AbaB,AB)
     print('ab check :',(abs(ab_ - np.sum(prop[0:4], axis=0)) < 0.001)[0])
     print('aB check :',(abs(aB_ - np.sum(prop[4:8], axis=0)) < 0.001)[0])
     print('Ab check :',(abs(Ab_ - np.sum(prop[8:12], axis=0)) < 0.001)[0])
@@ -320,7 +355,7 @@ if checkab :
 
 # Check cd
 if checkcd :    
-    cd_,cD_,Cd_,CD_ = continuous_evolution_cd(r,sp,st,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_a,show_graph_x,cd,CdcD,CD)
+    cd_,cD_,Cd_,CD_ = continuous_evolution_cd(r,sp,st,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_x,show_graph_x,cd,CdcD,CD)
     print('cd check :',(abs(cd_ - np.sum(prop[(0,4,8,12),:], axis=0)) < 0.001)[0])
     print('cD check :',(abs(cD_ - np.sum(prop[(1,5,9,13),:], axis=0)) < 0.001)[0])
     print('Cd check :',(abs(Cd_ - np.sum(prop[(2,6,10,14),:], axis=0)) < 0.001)[0])
