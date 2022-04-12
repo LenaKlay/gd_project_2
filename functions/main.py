@@ -291,28 +291,28 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 dif = 0.2
 
 # Initial repartition
-CI = "left_cd"     # "equal"   "left"  "center" 
+CI = "left_cd"         # "equal"   "left"  "center" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_lenght = 20         # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 400          # final time
-L = 100          # length of the spatial domain
+T = 1000         # final time
+L = 200          # length of the spatial domain
 M = T*6          # number of time steps
 N = L            # number of spatial steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  
 
 # Graphics
-show_graph_x = False       # whether to show the graph in space or not
-show_graph_ini = False     # whether to show the allele graph or not at time t=0
+show_graph_x = True       # whether to show the graph in space or not
+show_graph_ini = True     # whether to show the allele graph or not at time t=0
 show_graph_fin = False    # whether to show the allele graph or not at time t=T
 
 show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T               # time at which to draw allele graphics
+mod_x = T/4              # time at which to draw allele graphics
 mod_t = T/50               # time points used to draw the graph in time
 save_fig = True           # save the figures (.pdf)
 
@@ -327,17 +327,16 @@ checkcd = False; cd = checkcd; CdcD = cd; CD = cd
  
 # prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
 
-I = 5  
 step_record = np.array([])  
 speed_record = np.array([])  
-for step in np.linspace(0.1, 3, 200) :
+for step in np.linspace(0.1, 6, 200) :
     N = int(L/step)
     step_record = np.append(step_record, step) 
     prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
     speed_record = np.append(speed_record, speed[-1]) 
 fig, ax = plt.subplots()
 ax.plot(step_record, speed_record) 
-ax.set(xlabel='N (size of a spatial step)', ylabel='Speed', title = f'Speed function of the spatial steps')   
+ax.set(xlabel='Size of a spatial step', ylabel='Speed', title = f'Speed function of the spatial steps')   
 if save_fig :
     fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/towards_discretization.pdf")   
 plt.show() 
