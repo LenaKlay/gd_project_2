@@ -143,16 +143,6 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
                 print("t=",t)
                 break 
-        
-        # Speed of the C or D wave
-        #C_or_D = np.dot(indexABCD[2,:],prop_gametes)
-        # we recorde the position only if the C or D wave is still in the environment. We do not recorde the 1 position since the treshold value of the wave might be outside the window.            
-        #if np.isin(True, C_or_D < treshold) and np.isin(True, C_or_D > 0.99) and np.where(C_or_D < treshold)[0][0] != 1 :  
-        #    position = np.append(position,np.where(C_or_D < treshold)[0][0])   # first position where the wave is under the treshold value
-        # if the treshold value of the wave is outside the window, stop the simulation  
-        #if not(np.isin(False, C_or_D >treshold) and np.isin(False, C_or_D <treshold) ) :
-        #    print("t=",t)
-        #    break 
             
         # spatial graph  
         if t>=mod_x*nb_graph :  

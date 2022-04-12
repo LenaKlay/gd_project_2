@@ -150,11 +150,6 @@ def graph_cd(X,t,cd_,cD_,Cd_,CD_,cd,CdcD,CD,sp,st,r):
     ax.legend()
     plt.show() 
 
-
-
-#checkcd = True; cd = checkcd; CdcD = cd; CD = cd
-#CI = "CD_left_cd_right"
-
 def continuous_evolution_cd(r,sp,st,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_x,show_graph_x,cd,CdcD,CD): 
     
     print("\nCHECK CD BELOW")

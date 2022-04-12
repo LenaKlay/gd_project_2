@@ -33,7 +33,7 @@ dico_locusABCD = {}
 for i in range(16) : 
     dico_locusABCD[locusABCD[i]] = i 
 
-# Fitness : produce a scalair that indicate the fitness of the gamete(s)
+# Fitness : produce a scalair that indicate the fitness of the gametes
 def fitness(gametes_produced,sd,sp,st) : 
     genome = gametes_produced[0]+gametes_produced[1]
     nb_sd = genome.count('A') + genome.count('B')
