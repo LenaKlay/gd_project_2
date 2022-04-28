@@ -139,8 +139,6 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
             prop_gametes[i,1:-1] = la.spsolve(B_, B.dot(prop_gametes[i,1:-1]) + dt*reaction_term[i,1:-1])
             prop_gametes[i,0] = prop_gametes[i,1]   # alpha=0
             prop_gametes[i,-1] = prop_gametes[i,-2]  # beta=0
-            
-        
         
         if CI != "equal" :
             # Position of the wave cd
@@ -158,7 +156,7 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
                 speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
-                print("t=",t)
+                print("t =",t)
                 break 
             
         # spatial graph  
@@ -176,9 +174,9 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
     if show_graph_fin :   
         graph_x(X, T, prop_gametes)
    
-    # speed function of time (from T/5 to T)
+    # speed function of time
     if CI != "equal" :
-        if np.shape(position)[0] != 0 :        
+        if len(speed_fct_of_time) != 0 :        
             fig, ax = plt.subplots()
             ax.plot(time, speed_fct_of_time) 
             ax.set(xlabel='Time', ylabel='Speed', title = f'Speed function of time with f0={CI_prop_drive}')   

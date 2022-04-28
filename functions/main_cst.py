@@ -153,7 +153,7 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
                 speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
-                print("t=",t)
+                print("t =",t)
                 break 
             
         # spatial graph  
