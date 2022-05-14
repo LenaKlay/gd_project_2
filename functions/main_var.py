@@ -23,6 +23,13 @@ from steps import fitness
 from steps import f
 from steps import coef
 
+########################## Graph parameters #######################################
+
+title_size = 15
+label_size = 17
+legend_size = 12
+line_size = 3
+
 ############################## Functions ############################################
 
 
@@ -179,14 +186,17 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
         if len(speed_fct_of_time) != 0 :        
             fig, ax = plt.subplots()
             ax.plot(time, speed_fct_of_time) 
-            ax.set(xlabel='Time', ylabel='Speed', title = f'Speed function of time with f0={CI_prop_drive}')   
+            ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)  
+            ax.grid()
             if save_fig :
-                fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/speed_fct_time.pdf")   
+                new_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.pdf", format = "pdf")   
+                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.svg", format = "svg")    
             plt.show() 
         else :
             print('No wave')
         
-    file = open(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/parameters.txt", "w") 
+    file = open(f"../outputs/var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}/parameters.txt", "w") 
     file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \ndif = {dif} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nM = {M} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
     file.close()
     
@@ -200,27 +210,30 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
 def graph_x(X, t, prop_gametes):
         fig, ax = plt.subplots()
         if WT :
-            ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=3)
+            ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=line_size)
         for i in range(3) :
             if [alleleA,alleleB,alleleCD][i] :
                 lab = ['A','B','C or D'][i]
                 col = ['yellowgreen','orange','deeppink'][i]
-                ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=3)
+                ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=line_size)
             if [cd,CdcD,CD][i] :
                 lab = ['cd','cD+Cd','CD'][i]
                 col = ['yellowgreen','skyblue','blue'][i]
                 vect = [(1-indexABCD)[2,:]*(1-indexABCD)[3,:], (1-indexABCD)[2,:]*indexABCD[3,:]+indexABCD[2,:]*(1-indexABCD)[3,:], indexABCD[2,:]*indexABCD[3,:]][i]
-                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=3)
+                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=line_size)
             if [ab,AbaB,AB][i] :
                 lab = ['ab','aB+Ab','AB'][i]
                 col = ['yellowgreen','skyblue','blue'][i]
                 vect = [(1-indexABCD)[0,:]*(1-indexABCD)[1,:], (1-indexABCD)[0,:]*indexABCD[1,:]+indexABCD[0,:]*(1-indexABCD)[1,:], indexABCD[0,:]*indexABCD[1,:]][i]
-                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=3)
+                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=line_size)
         ax.grid() 
         if ticks : 
             ax.set_xticks(X)   
         ax.axes.xaxis.set_ticklabels([])
-        ax.set(xlabel='Space', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, time = {int(t)}')   
+        ax.set(xlabel='Space', ylabel='Frequency', ylim=[-0.02,1.02])   
+        ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
+        ax.set_title(f"t = {t}", fontsize = title_size, loc='right')
+        plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
             save_figure(t, "graph_space", r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig) 
@@ -251,30 +264,36 @@ def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
     else : 
         fig, ax = plt.subplots()
         for i in range(len(lab)) : 
-            ax.plot(values[0,:], values[i+1,:], color=col[i], label=lab[i], linewidth=3)
+            ax.plot(values[0,:], values[i+1,:], color=col[i], label=lab[i], linewidth=line_size)
         ax.grid()      
-        ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, position = {N//2+focus_x}, time = {int(t)}')   
+        ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02]) 
+        ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
+        ax.set_title(f"position = {N//2+focus_x}, t = {t}", fontsize = title_size, loc='right')
+        plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/focus_on_one_site.pdf")   
+            new_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}" 
+            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.pdf", format = "pdf")   
+            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.svg", format = "svg")   
         plt.show() 
         
-        
-def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :           
-            if t == 0 : 
-                actual_dir = os.getcwd()
-                print ("The current working directory is %s" % actual_dir)
-                new_dir = f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"
-                try:
-                    os.mkdir(new_dir)
-                except OSError:
-                    print ("Creation of the directory %s failed" % new_dir)
-                else:
-                    print ("Successfully created the directory %s " % new_dir)
-            print("t=",t)
-            fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/t_{t}.pdf")  
+            
+def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :   
+    new_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+    #new_dir = f"../outputs/r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"      
+    if t == 0 : 
+        actual_dir = os.getcwd()
+        print ("The current working directory is %s" % actual_dir)             
+        try:
+            os.mkdir(f"../outputs/{new_dir}")
+        except OSError:
+            print ("Fail : %s "  % new_dir)
+        else:
+            print ("Success : %s "  % new_dir)
+    fig.savefig(f"../outputs/{new_dir}/t_{t}.pdf", format='pdf')  
+    fig.savefig(f"../outputs/{new_dir}/t_{t}.svg", format='svg')
 
-       
+
 
 
 ############################### Parameters ######################################

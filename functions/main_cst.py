@@ -13,6 +13,13 @@ import scipy.sparse as spa
 import scipy.sparse.linalg  as la
 import os
 
+########################## Graph parameters #######################################
+
+title_size = 15
+label_size = 17
+legend_size = 12
+line_size = 3
+
 ########################## External functions #######################################
 
 # Fitness, conversion, recombinaison...
@@ -23,7 +30,6 @@ from steps import coef
 # To control the program through locus ab and loccus cd sums
 from control import continuous_evolution_ab
 from control import continuous_evolution_cd
-
 
 ############################## Functions ############################################
 
@@ -79,7 +85,6 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
     
     # Spatial domain (1D)
     X = np.linspace(0,N,N+1)*dx  
-    print(X)
     
     # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
     prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
@@ -180,14 +185,20 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
         if np.shape(position)[0] != 0 :        
             fig, ax = plt.subplots()
             ax.plot(time, speed_fct_of_time) 
-            ax.set(xlabel='Time', ylabel='Speed', title = f'Speed function of time with f0={CI_prop_drive}')   
+            ax.set(xlabel='Time', ylabel='Speed') 
+            ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
+            ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)
+            plt.rc('legend', fontsize=legend_size)
+            plt.grid() 
             if save_fig :
-                fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/speed_fct_time.pdf")   
+                new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.pdf", format = "pdf")   
+                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.svg", format = "svg")                            
             plt.show() 
         else :
             print('No wave')
         
-    file = open(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/parameters.txt", "w") 
+    file = open(f"../outputs/cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}/parameters.txt", "w") 
     file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \ndif = {dif} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
     file.close()
     
@@ -201,24 +212,27 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
 def graph_x(X, t, prop_gametes):
         fig, ax = plt.subplots()
         if WT :
-            ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=3)
+            ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=line_size)
         for i in range(3) :
             if [alleleA,alleleB,alleleCD][i] :
                 lab = ['A','B','C or D'][i]
                 col = ['yellowgreen','orange','deeppink'][i]
-                ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=3)
+                ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=line_size)
             if [cd,CdcD,CD][i] :
                 lab = ['cd','cD+Cd','CD'][i]
                 col = ['yellowgreen','skyblue','blue'][i]
                 vect = [(1-indexABCD)[2,:]*(1-indexABCD)[3,:], (1-indexABCD)[2,:]*indexABCD[3,:]+indexABCD[2,:]*(1-indexABCD)[3,:], indexABCD[2,:]*indexABCD[3,:]][i]
-                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=3)
+                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=line_size)
             if [ab,AbaB,AB][i] :
                 lab = ['ab','aB+Ab','AB'][i]
                 col = ['yellowgreen','skyblue','blue'][i]
                 vect = [(1-indexABCD)[0,:]*(1-indexABCD)[1,:], (1-indexABCD)[0,:]*indexABCD[1,:]+indexABCD[0,:]*(1-indexABCD)[1,:], indexABCD[0,:]*indexABCD[1,:]][i]
-                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=3)
+                ax.plot(X, np.dot(vect,prop_gametes), color=col, label=lab, linewidth=line_size)
         ax.grid()      
-        ax.set(xlabel='Space', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, time = {int(t)}')   
+        ax.set(xlabel='Space', ylabel='Frequency', ylim=[-0.02,1.02])   
+        ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
+        ax.set_title(f't = {int(t)}', fontsize = title_size, loc='right')
+        plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
             save_figure(t, "graph_space", r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig) 
@@ -248,45 +262,60 @@ def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
     else : 
         fig, ax = plt.subplots()
         for i in range(len(lab)) : 
-            ax.plot(values[0,:], values[i+1,:], color=col[i], label=lab[i], linewidth=3)
+            ax.plot(values[0,:], values[i+1,:], color=col[i], label=lab[i], linewidth=line_size)
         ax.grid()      
-        ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02], title = f'Evolution : f0={CI_prop_drive}, position = {N//2+focus_x}, time = {int(t)}')   
+        ax.set(xlabel='Time', ylabel='Frequency', ylim=[-0.02,1.02]) 
+        ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
+        ax.set_title(f"position = {N//2+focus_x}, t = {t}", fontsize = title_size, loc='right')
+        plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/focus_on_one_site.pdf")   
+            new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.pdf", format = "pdf")   
+            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.svg", format = "svg")   
         plt.show() 
         
     
-def speed_fct_of_spatial_step(step_min, step_max, nb_step) :  
+def speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale) :  
     step_record = np.array([])  
-    speed_record = np.array([])  
-    for step in np.linspace(step_min, step_max, nb_step) :
+    speed_record = np.array([]) 
+    if log_scale : step_range = np.logspace(-1, 1, num=nb_step)
+    else : step_range = np.linspace(step_min, step_max, nb_step)
+    for step in step_range :
         N = int(L/step)
         step_record = np.append(step_record, step) 
         prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
-        speed_record = np.append(speed_record, speed[-1]) 
+        speed_record = np.append(speed_record, speed[-1])    
+        print("step :", step, " and speed :", speed[-1])         
     fig, ax = plt.subplots()
     ax.plot(step_record, speed_record) 
-    ax.set(xlabel='Size of a spatial step', ylabel='Speed', title = f'Speed function of the spatial steps')   
+    ax.set(xlabel='Size of a spatial step', ylabel='Speed') 
+    ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
+    ax.set_title('Speed of the wave C or D function of the spatial steps', fontsize = title_size, loc='right')
+    plt.grid()
     if save_fig :
-        fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/towards_discretization.pdf")   
+        new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+        fig.savefig(f"../outputs/{new_dir}/towards_discretization.pdf", format = "pdf")   
+        fig.savefig(f"../outputs/{new_dir}/towards_discretization.svg", format = "svg") 
     plt.show() 
 
     
-def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :           
-            if t == 0 : 
-                actual_dir = os.getcwd()
-                print ("The current working directory is %s" % actual_dir)
-                new_dir = f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"
-                try:
-                    os.mkdir(new_dir)
-                except OSError:
-                    print ("Creation of the directory %s failed" % new_dir)
-                else:
-                    print ("Successfully created the directory %s " % new_dir)
-            fig.savefig(f"../outputs/r_{r}_gamma_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}/t_{t}.pdf")  
 
-       
+def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :   
+    new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+    #new_dir = f"../outputs/r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"      
+    if t == 0 : 
+        actual_dir = os.getcwd()
+        print ("The current working directory is %s" % actual_dir)             
+        try:
+            os.mkdir(f"../outputs/{new_dir}")
+        except OSError:
+            print ("Fail : %s "  % new_dir)
+        else:
+            print ("Success : %s "  % new_dir)
+    fig.savefig(f"../outputs/{new_dir}/t_{t}.pdf", format='pdf')  
+    fig.savefig(f"../outputs/{new_dir}/t_{t}.svg", format='svg')
+
 
 
 ############################### Parameters ######################################
@@ -308,21 +337,21 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 dif = 0.2
 
 # Initial repartition
-CI = "left_cd"      # "equal"   "left"  "center" 
+CI = "left"      # "equal"   "left"  "center"  "left_cd"
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 1000         # final time
-L = 200          # length of the spatial domain
-M = T*6          # number of time steps
-N = L//2            # number of spatial steps
+T = 400         # final time
+L = 800         # length of the spatial domain
+M = T*10         # number of time steps
+N = L            # number of spatial steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  
 
 # Graphics
-show_graph_x = True       # whether to show the graph in space or not
-show_graph_ini = True     # whether to show the allele graph or not at time t=0
+show_graph_x = False       # whether to show the graph in space or not
+show_graph_ini = False     # whether to show the allele graph or not at time t=0
 show_graph_fin = False    # whether to show the allele graph or not at time t=T
 
 show_graph_t = False      # whether to show the graph in time or not
@@ -340,7 +369,7 @@ checkab = False; ab = checkab; AbaB = ab; AB = ab
 checkcd = False; cd = checkcd; CdcD = cd; CD = cd
 
 # To compute the speed function of spatial step size
-show_speed_fct_of_spatial_step = False
+show_speed_fct_of_spatial_step = True
 step_min = 0.1
 step_max = 6 
 nb_step = 200
@@ -350,7 +379,8 @@ nb_step = 200
  
 
 if show_speed_fct_of_spatial_step :
-    speed_fct_of_spatial_step(step_min, step_max, nb_step)
+    speed_fct_of_spatial_step(step_min, step_max, nb_step, True)
+    speed_fct_of_spatial_step(step_min, step_max, nb_step, False)
 else : 
     prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
     
