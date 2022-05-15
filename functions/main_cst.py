@@ -182,7 +182,7 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
    
     # speed function of time (from T/5 to T)
     if CI != "equal" :
-        if np.shape(position)[0] != 0 :        
+        if np.shape(position)[0] != 0 and show_graph_x :        
             fig, ax = plt.subplots()
             ax.plot(time, speed_fct_of_time) 
             ax.set(xlabel='Time', ylabel='Speed') 
@@ -289,17 +289,31 @@ def speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale) :
         print("step :", step, " and speed :", speed[-1])         
     fig, ax = plt.subplots()
     ax.plot(step_record, speed_record) 
+    if log_scale : ax.set_xscale('log')
     ax.set(xlabel='Size of a spatial step', ylabel='Speed') 
     ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
     ax.set_title('Speed of the wave C or D function of the spatial steps', fontsize = title_size, loc='right')
     plt.grid()
+    
     if save_fig :
         new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-        fig.savefig(f"../outputs/{new_dir}/towards_discretization.pdf", format = "pdf")   
-        fig.savefig(f"../outputs/{new_dir}/towards_discretization.svg", format = "svg") 
+        try:
+            os.mkdir(f"../outputs/{new_dir}")
+        except OSError:
+            print ("Fail : %s "  % new_dir)
+        else:
+            print ("Success : %s "  % new_dir)
+        fig.savefig(f"../outputs/{new_dir}/towards_discretization_log_{log_scale}.pdf", format = "pdf")   
+        fig.savefig(f"../outputs/{new_dir}/towards_discretization_log_{log_scale}.svg", format = "svg") 
+        np.savetxt(f"../outputs/{new_dir}/speed_record_log_{log_scale}.txt", speed_record)   
+        np.savetxt(f"../outputs/{new_dir}/step_record_log_{log_scale}.txt", step_record)   
     plt.show() 
-
     
+
+#log_scale = True
+#new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+#step_record = np.loadtxt(f"../outputs/{new_dir}/step_record_log_{log_scale}.txt")
+#speed_record = np.loadtxt(f"../outputs/{new_dir}/speed_record_log_{log_scale}.txt")
 
 def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :   
     new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
@@ -315,7 +329,6 @@ def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig
             print ("Success : %s "  % new_dir)
     fig.savefig(f"../outputs/{new_dir}/t_{t}.pdf", format='pdf')  
     fig.savefig(f"../outputs/{new_dir}/t_{t}.svg", format='svg')
-
 
 
 ############################### Parameters ######################################
@@ -371,16 +384,16 @@ checkcd = False; cd = checkcd; CdcD = cd; CD = cd
 # To compute the speed function of spatial step size
 show_speed_fct_of_spatial_step = True
 step_min = 0.1
-step_max = 6 
+step_max = 3 
 nb_step = 200
+log_scale = False
 
 
 ############################### Evolution ########################################
  
 
 if show_speed_fct_of_spatial_step :
-    speed_fct_of_spatial_step(step_min, step_max, nb_step, True)
-    speed_fct_of_spatial_step(step_min, step_max, nb_step, False)
+    speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale)
 else : 
     prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
     
