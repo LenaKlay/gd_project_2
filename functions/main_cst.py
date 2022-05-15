@@ -420,4 +420,3 @@ if checkcd :
 
 print('\nr = ',r,' sd =', sd,' dif =',dif,' gamma =',gamma, ' CI =', CI)
 print('T =',T,' L =',L,' M =',M,' N =',N,' theta =',theta, ' f0 =', CI_prop_drive)
-
