@@ -111,7 +111,6 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
     # Spatial graph 
     nb_graph = 1
     if show_graph_ini :
-        print('blabla')
         graph_x(X, 0, prop_gametes)
       
     # Time graph
@@ -183,17 +182,15 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
    
     # speed function of time
     if CI != "equal" :
-        if len(speed_fct_of_time) != 0 :        
+        if len(speed_fct_of_time) != 0 and show_graph_x :        
             fig, ax = plt.subplots()
             ax.plot(time, speed_fct_of_time) 
             ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)  
             ax.grid()
             if save_fig :
-                new_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.pdf", format = "pdf")   
-                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.svg", format = "svg")    
+                save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")    
             plt.show() 
-        else :
+        if np.shape(position)[0] == 0 :
             print('No wave')
         
     file = open(f"../outputs/var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}/parameters.txt", "w") 
@@ -236,7 +233,7 @@ def graph_x(X, t, prop_gametes):
         plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            save_figure(t, "graph_space", r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig) 
+            save_fig_or_data(out_dir, fig, [], f"t_{t}")   
         plt.show() 
         
 # Proportion of allele in time at spatial site 'focus x'
@@ -272,28 +269,26 @@ def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
         plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            new_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}" 
-            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.pdf", format = "pdf")   
-            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.svg", format = "svg")   
+            save_fig_or_data(out_dir, fig, [], f"focus_on_site_{focus_x}") 
         plt.show() 
         
-            
-def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :   
-    new_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-    #new_dir = f"../outputs/r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"      
-    if t == 0 : 
-        actual_dir = os.getcwd()
-        print ("The current working directory is %s" % actual_dir)             
+   
+
+def save_fig_or_data(new_dir, fig, data, title):
+    new_dir = f"../outputs/{new_dir}"
+    # ... if the directory doesn't already exist
+    if not os.path.exists(new_dir): 
         try:
-            os.mkdir(f"../outputs/{new_dir}")
+            os.mkdir(new_dir)
         except OSError:
-            print ("Fail : %s "  % new_dir)
-        else:
-            print ("Success : %s "  % new_dir)
-    fig.savefig(f"../outputs/{new_dir}/t_{t}.pdf", format='pdf')  
-    fig.savefig(f"../outputs/{new_dir}/t_{t}.svg", format='svg')
-
-
+            print ("Fail : %s " % new_dir)
+    # Save figure
+    if fig != [] :
+        fig.savefig(f"../outputs/{new_dir}/{title}.pdf", format='pdf')  
+        fig.savefig(f"../outputs/{new_dir}/{title}.svg", format='svg')
+    # Save datas
+    if data != [] :
+        np.savetxt(f"../outputs/{new_dir}/{title}.txt", data)   
 
 
 ############################### Parameters ######################################
@@ -321,10 +316,10 @@ CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition i
 
 # Numerical parameters
 T = 2000         # final time
-M = T*6          # number of time steps
-L = 200
+L = 200          # length of the spatial domain
+M = 20000        # number of time steps
 #X = np.linspace(0,L,101)
-X = np.concatenate((np.arange(0,L//2,1), np.arange(100, L+1,4))) # spatial domain
+X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,1.7))) # spatial domain
 #X = np.sort(np.random.random_sample(L)*L)
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  
@@ -349,6 +344,8 @@ alleleA = True; alleleB = alleleA; alleleCD = alleleA
 ab = False; AbaB = ab; AB = ab 
 cd = False; CdcD = cd; CD = cd
 
+# Where to store the outputs
+out_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
 
 ############################### Evolution ########################################
  

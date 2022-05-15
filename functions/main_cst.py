@@ -190,12 +190,11 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
             ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)
             plt.rc('legend', fontsize=legend_size)
             plt.grid() 
+            plt.gca().set_ylim(bottom=0)
             if save_fig :
-                new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.pdf", format = "pdf")   
-                fig.savefig(f"../outputs/{new_dir}/speed_fct_time.svg", format = "svg")                            
+                save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")                         
             plt.show() 
-        else :
+        if np.shape(position)[0] == 0 :
             print('No wave')
         
     file = open(f"../outputs/cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}/parameters.txt", "w") 
@@ -235,7 +234,7 @@ def graph_x(X, t, prop_gametes):
         plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            save_figure(t, "graph_space", r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig) 
+            save_fig_or_data(out_dir, fig, [], f"t_{t}")  
         plt.show() 
         
 # Proportion of allele in time at spatial site 'focus x'
@@ -270,9 +269,7 @@ def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
         plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.pdf", format = "pdf")   
-            fig.savefig(f"../outputs/{new_dir}/focus_on_one_site.svg", format = "svg")   
+            save_fig_or_data(out_dir, fig, [], f"focus_on_site_{focus_x}") 
         plt.show() 
         
     
@@ -296,40 +293,31 @@ def speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale) :
     plt.grid()
     
     if save_fig :
-        new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-        try:
-            os.mkdir(f"../outputs/{new_dir}")
-        except OSError:
-            print ("Fail : %s "  % new_dir)
-        else:
-            print ("Success : %s "  % new_dir)
-        fig.savefig(f"../outputs/{new_dir}/towards_discretization_log_{log_scale}.pdf", format = "pdf")   
-        fig.savefig(f"../outputs/{new_dir}/towards_discretization_log_{log_scale}.svg", format = "svg") 
-        np.savetxt(f"../outputs/{new_dir}/speed_record_log_{log_scale}.txt", speed_record)   
-        np.savetxt(f"../outputs/{new_dir}/step_record_log_{log_scale}.txt", step_record)   
+        if log_scale : end_title = "_log"
+        else : end_title = ""
+        save_fig_or_data(out_dir, fig, [], f"towards_discretization{end_title}")
+        save_fig_or_data(out_dir, [], step_record, f"step_record{end_title}")
+        save_fig_or_data(out_dir, [], speed_record, f"speed_record{end_title}")
     plt.show() 
-    
 
-#log_scale = True
-#new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-#step_record = np.loadtxt(f"../outputs/{new_dir}/step_record_log_{log_scale}.txt")
-#speed_record = np.loadtxt(f"../outputs/{new_dir}/speed_record_log_{log_scale}.txt")
 
-def save_figure(t, graph_type, r, gamma, sd, st, sp, dif, CI, CI_prop_drive, fig)   :   
-    new_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
-    #new_dir = f"../outputs/r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_f0_{CI_prop_drive}_{CI}"      
-    if t == 0 : 
-        actual_dir = os.getcwd()
-        print ("The current working directory is %s" % actual_dir)             
+
+def save_fig_or_data(new_dir, fig, data, title):
+    new_dir = f"../outputs/{new_dir}"
+    # ... if the directory doesn't already exist
+    if not os.path.exists(new_dir): 
         try:
-            os.mkdir(f"../outputs/{new_dir}")
+            os.mkdir(new_dir)
         except OSError:
-            print ("Fail : %s "  % new_dir)
-        else:
-            print ("Success : %s "  % new_dir)
-    fig.savefig(f"../outputs/{new_dir}/t_{t}.pdf", format='pdf')  
-    fig.savefig(f"../outputs/{new_dir}/t_{t}.svg", format='svg')
-
+            print ("Fail : %s " % new_dir)
+    # Save figure
+    if fig != [] :
+        fig.savefig(f"../outputs/{new_dir}/{title}.pdf", format='pdf')  
+        fig.savefig(f"../outputs/{new_dir}/{title}.svg", format='svg')
+    # Save datas
+    if data != [] :
+        np.savetxt(f"../outputs/{new_dir}/{title}.txt", data)   
+              
 
 ############################### Parameters ######################################
 
@@ -350,29 +338,29 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 dif = 0.2
 
 # Initial repartition
-CI = "left"      # "equal"   "left"  "center"  "left_cd"
+CI = "left_cd"      # "equal"   "left"  "center"  "left_cd"
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 400         # final time
-L = 800         # length of the spatial domain
-M = T*10         # number of time steps
-N = L            # number of spatial steps
+T = 600         # final time
+L = 200         # length of the spatial domain
+M = 6000        # number of time steps
+N = 2000         # number of spatial steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  
 
 # Graphics
-show_graph_x = False       # whether to show the graph in space or not
-show_graph_ini = False     # whether to show the allele graph or not at time t=0
+show_graph_x = True       # whether to show the graph in space or not
+show_graph_ini = True     # whether to show the allele graph or not at time t=0
 show_graph_fin = False    # whether to show the allele graph or not at time t=T
 
 show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T/4               # time at which to draw allele graphics
-mod_t = T/50              # time points used to draw the graph in time
+mod_x = T//4               # time at which to draw allele graphics
+mod_t = T//50              # time points used to draw the graph in time
 save_fig = True           # save the figures (.pdf)
 
 # Which alleles to show in the graph
@@ -382,16 +370,18 @@ checkab = False; ab = checkab; AbaB = ab; AB = ab
 checkcd = False; cd = checkcd; CdcD = cd; CD = cd
 
 # To compute the speed function of spatial step size
-show_speed_fct_of_spatial_step = True
+show_speed_fct_of_spatial_step = False
 step_min = 0.1
 step_max = 3 
 nb_step = 200
 log_scale = False
 
+# Where to store the outputs
+out_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+
 
 ############################### Evolution ########################################
  
-
 if show_speed_fct_of_spatial_step :
     speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale)
 else : 
