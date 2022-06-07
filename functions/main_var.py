@@ -319,7 +319,7 @@ T = 2000         # final time
 L = 200          # length of the spatial domain
 M = 20000        # number of time steps
 #X = np.linspace(0,L,101)
-X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,1.7))) # spatial domain
+X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,1.8))) # spatial domain
 #X = np.sort(np.random.random_sample(L)*L)
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  

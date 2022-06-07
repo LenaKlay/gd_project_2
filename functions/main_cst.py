@@ -338,7 +338,7 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 dif = 0.2
 
 # Initial repartition
-CI = "left_cd"      # "equal"   "left"  "center"  "left_cd"
+CI = "left"      # "equal"   "left"  "center"  "left_cd"
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
