@@ -172,8 +172,10 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
                 position = np.append(position, X[np.where(wave_cd < treshold)[0][0]])
             # compute the speed
             if len(position) > 20 : 
+                print(len(position))               
+                print(position[int(4*len(position)/5):len(position)])
                 time = np.append(time, t)
-                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(X[int(4*len(position)/5):len(position)]))/dt)
+                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
                 print("t =",t)
@@ -208,7 +210,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
             print('No wave')
         
     file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
-    file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \nm = {m} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nM = {M} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
+    file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nM = {M} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
     file.close()
     
     return(prop_gametes, time, speed_fct_of_time)  
@@ -330,7 +332,7 @@ CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition i
 
 # Numerical parameters
 # Numerical parameters
-T = 600          # final time
+T = 60         # final time
 L = 200          # length of the spatial domain
 M = T*10         # number of time steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
@@ -371,6 +373,7 @@ out_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value
 ############################### Evolution ########################################
  
 prop, time, speed = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x) 
+print(speed)
 
 print('\nr = ',r,' sd =', sd, diffusion, cst_value, 'gamma =', gamma, ' CI =', CI)
 print('T =',T,' L =',L,' M =',M, 'theta =',theta, ' f0 =', CI_prop_drive)

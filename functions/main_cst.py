@@ -158,14 +158,16 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             # we recorde the position only if the cd wave is still in the environment. We do not recorde the 0 position since the treshold value of the wave might be outside the window.            
             if np.isin(True, wave_cd > treshold) and np.isin(True, wave_cd < 0.99) and np.where(wave_cd > treshold)[0][0] != 0 :  
                 # first position where the wave is over the treshold value
-                position = np.append(position, np.where(wave_cd > treshold)[0][0])   
+                position = np.append(position, X[np.where(wave_cd > treshold)[0][0]])   
             elif np.isin(True, wave_cd < treshold) and np.isin(True, wave_cd > 0.01) and np.where(wave_cd < treshold)[0][0] != 0 :  
                 # first position where the wave is under the treshold value
-                position = np.append(position, np.where(wave_cd < treshold)[0][0])
+                position = np.append(position, X[np.where(wave_cd < treshold)[0][0]])
             # Compute the speed
             if len(position) > 20 : 
+                print(len(position))               
+                print(position[int(4*len(position)/5):len(position)])
                 time = np.append(time, t)
-                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))*dx/dt)
+                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
                 print("t =",t)
@@ -350,7 +352,7 @@ CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "A
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 600          # final time
+T = 60          # final time
 L = 200          # length of the spatial domain
 M = T*10         # number of time steps
 N = L         # number of spatial steps
