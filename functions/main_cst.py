@@ -164,8 +164,6 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
                 position = np.append(position, X[np.where(wave_cd < treshold)[0][0]])
             # Compute the speed
             if len(position) > 20 : 
-                print(len(position))               
-                print(position[int(4*len(position)/5):len(position)])
                 time = np.append(time, t)
                 speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  

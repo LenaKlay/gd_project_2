@@ -172,8 +172,6 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
                 position = np.append(position, X[np.where(wave_cd < treshold)[0][0]])
             # compute the speed
             if len(position) > 20 : 
-                print(len(position))               
-                print(position[int(4*len(position)/5):len(position)])
                 time = np.append(time, t)
                 speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  
@@ -332,15 +330,15 @@ CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition i
 
 # Numerical parameters
 # Numerical parameters
-T = 60         # final time
+T = 600         # final time
 L = 200          # length of the spatial domain
 M = T*10         # number of time steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit                  
             
 # Spatial domain
-X = np.linspace(0,L,201)   # homogeneous
-#X = np.concatenate((np.arange(0,L//2,2), np.arange(L//2, L+1,4)))   # heterogeneous half half
+#X = np.linspace(0,L,201)   # homogeneous
+X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,2)))   # heterogeneous half half
 #X = np.sort(np.random.random_sample(L)*L)     # heterogeneous randomized
             
 # Diffusion rate: constant or depending on m, dx and dt
