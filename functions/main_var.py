@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import scipy.sparse as spa
 import scipy.sparse.linalg  as la
 import os
+# Change font to serif
+plt.rcParams.update({'font.family':'serif'})
 
 ########################## External functions #######################################
 
@@ -76,7 +78,7 @@ def print_fitness() :
     return(new_list)
 
 
-def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):   
+def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):   
    
     # Time step
     dt = T/M    
@@ -85,6 +87,11 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
     N = len(X)-1
     dx = X[1:]-X[:-1]
     denomx = dx[1:]*dx[:-1]*(dx[1:]+dx[:-1])/2
+    
+    # Diffusion rate
+    if diffusion == 'cst dif': dif = cst_value
+    if diffusion == 'cst m': m = cst_value; dif = (m*dx[1:]*dx[:-1])/(2*dt)
+    
       
     # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
     prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
@@ -92,11 +99,14 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
     #    prop_gametes = np.ones((16,N+1))*(1/16)     
     if CI == "equal" :                              
         prop_gametes[0:4,:] = np.ones((4,N+1))*(1/4)   
-    if CI == "left" : 
+    if CI == "left_abcd" : 
         prop_gametes[15,0:N//2+1] = CI_prop_drive  
     if CI == "left_cd" : 
         prop_gametes[3,0:N//2+1] = CI_prop_drive
-    if CI == "center" : 
+    if CI == "left_ab_cd" : 
+        prop_gametes[15,0:N//2+1-CI_lenght] = CI_prop_drive
+        prop_gametes[3,N//2+1-CI_lenght:N//2+1] = CI_prop_drive  
+    if CI == "center_abcd" : 
         prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
     if CI == "center_cd" : 
         prop_gametes[3,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
@@ -123,6 +133,10 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
     C0 = -np.ones(N-1)*(dx[1:]+dx[:-1]); C0[0]=-dx[0]; C0[-1]=-dx[-1]; C0 = C0/denomx
     C1 = np.zeros(N-1); C1[1:] = dx[:-2]/denomx[:-1]
     C2 = np.zeros(N-1); C2[:-1] = dx[2:]/denomx[1:]
+    # Diffusion    
+    if diffusion == 'cst dif': C0 = C0*dif; C1 = C1*dif; C2 = C2*dif
+    if diffusion == 'cst m': C0 = C0*dif; C1[1:] = C1[1:]*dif[:-1]; C2[:-1] = C2[:-1]*dif[1:]
+    # Laplacian with diffusion and dx
     A = spa.spdiags([C1,C0,C2],[1,0,-1], N-1, N-1)       # 1D discrete Laplacian with Neumann boundary conditions (derivative=0)  
     
     # Example for spdiags...
@@ -130,9 +144,9 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
     #diags = np.array([0, -1, 2])
     #spa.spdiags(data, diags, 4, 4).toarray()
         
-    B = spa.identity(N-1)+((1-theta)*dif*dt)*A            # Matrix for the explicit side of the Crank Nicholson scheme  
-    B_ = spa.identity(N-1)-(theta*dif*dt)*A               # Matrix for the implicit side of the Crank Nicholson scheme  
-
+    B = spa.identity(N-1)+((1-theta)*dt*A)           # Matrix for the explicit side of the Crank Nicholson scheme  
+    B_ = spa.identity(N-1)-(theta*dt*A)               # Matrix for the implicit side of the Crank Nicholson scheme  
+    
     # Evolution
     for t in np.linspace(dt,T,M) : 
         
@@ -159,7 +173,7 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
             # compute the speed
             if len(position) > 20 : 
                 time = np.append(time, t)
-                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
+                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(X[int(4*len(position)/5):len(position)]))/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
                 print("t =",t)
@@ -185,7 +199,7 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
         if len(speed_fct_of_time) != 0 and show_graph_x :        
             fig, ax = plt.subplots()
             ax.plot(time, speed_fct_of_time) 
-            ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)  
+            #ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)  
             ax.grid()
             if save_fig :
                 save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")    
@@ -193,8 +207,8 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x):
         if np.shape(position)[0] == 0 :
             print('No wave')
         
-    file = open(f"../outputs/var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}/parameters.txt", "w") 
-    file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \ndif = {dif} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nM = {M} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
+    file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
+    file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \nm = {m} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nM = {M} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
     file.close()
     
     return(prop_gametes, time, speed_fct_of_time)  
@@ -210,7 +224,7 @@ def graph_x(X, t, prop_gametes):
             ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=line_size)
         for i in range(3) :
             if [alleleA,alleleB,alleleCD][i] :
-                lab = ['A','B','C or D'][i]
+                lab = [r'$X_A$',r'$X_B$',r'$X_C/X_D$'][i]
                 col = ['yellowgreen','orange','deeppink'][i]
                 ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=line_size)
             if [cd,CdcD,CD][i] :
@@ -284,6 +298,7 @@ def save_fig_or_data(new_dir, fig, data, title):
             print ("Fail : %s " % new_dir)
     # Save figure
     if fig != [] :
+        fig.savefig(f"../outputs/{new_dir}/{title}.png", format='png')  
         fig.savefig(f"../outputs/{new_dir}/{title}.pdf", format='pdf')  
         fig.savefig(f"../outputs/{new_dir}/{title}.svg", format='svg')
     # Save datas
@@ -306,23 +321,29 @@ sp = 0.1
 # Coefficents for the reaction term
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
-# Diffusion rate
-dif = 0.2
  
 # Initial repartition
-CI = "left"      # "equal"  "left"  "center"  "left_cd"  "center_cd" 
+CI = "left_cd"      # "equal"  "left_abcd"  "left_ab_cd" "left_cd" "center_abcd" "center_cd" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+                    # for "left_ab_cd", lenght of the abCD genotype domain
 
 # Numerical parameters
-T = 2000         # final time
+# Numerical parameters
+T = 600          # final time
 L = 200          # length of the spatial domain
-M = 20000        # number of time steps
-#X = np.linspace(0,L,101)
-X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,1.8))) # spatial domain
-#X = np.sort(np.random.random_sample(L)*L)
+M = T*10         # number of time steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
-                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  
+                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit                  
+            
+# Spatial domain
+X = np.linspace(0,L,201)   # homogeneous
+#X = np.concatenate((np.arange(0,L//2,2), np.arange(L//2, L+1,4)))   # heterogeneous half half
+#X = np.sort(np.random.random_sample(L)*L)     # heterogeneous randomized
+            
+# Diffusion rate: constant or depending on m, dx and dt
+diffusion = 'cst dif'     # cst dif or cst m
+cst_value = 0.2           # value of the constant diffusion rate or value of the constant migration rate, depending on the line before 
 
 # Graphics
 show_graph_x = True       # whether to show the graph in space or not
@@ -334,8 +355,8 @@ show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T/4               # time at which to draw allele graphics
-mod_t = T/50              # time points used to draw the graph in time
+mod_x = T//4              # time at which to draw allele graphics
+mod_t = T//50             # time points used to draw the graph in time
 save_fig = True           # save the figures (.pdf)
 
 # Which alleles to show in the graph
@@ -345,10 +366,11 @@ ab = False; AbaB = ab; AB = ab
 cd = False; CdcD = cd; CD = cd
 
 # Where to store the outputs
-out_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+out_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value}_{CI}"
 
 ############################### Evolution ########################################
  
-prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,M,X,theta,mod_x) 
+prop, time, speed = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x) 
 
-
+print('\nr = ',r,' sd =', sd, diffusion, cst_value, 'gamma =', gamma, ' CI =', CI)
+print('T =',T,' L =',L,' M =',M, 'theta =',theta, ' f0 =', CI_prop_drive)

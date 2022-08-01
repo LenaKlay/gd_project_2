@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import scipy.sparse as spa
 import scipy.sparse.linalg  as la
 import os
+# Change font to serif
+plt.rcParams.update({'font.family':'serif'})
 
 ########################## Graph parameters #######################################
 
@@ -77,11 +79,15 @@ def print_fitness() :
     return(new_list)
 
 
-def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):   
+def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):   
    
     # Steps
     dt = T/M    # time
     dx = L/N    # space
+    
+    # Diffusion rate
+    if diffusion == 'cst dif': dif = cst_value
+    if diffusion == 'cst m': m = cst_value; dif = (m*dx**2)/(2*dt) 
     
     # Spatial domain (1D)
     X = np.linspace(0,N,N+1)*dx  
@@ -92,12 +98,16 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
     #    prop_gametes = np.ones((16,N+1))*(1/16)     
     if CI == "equal" :                              
         prop_gametes[0:4,:] = np.ones((4,N+1))*(1/4)   
-    if CI == "left" : 
+    if CI == "left_abcd" : 
         prop_gametes[15,0:N//2+1] = CI_prop_drive  
     if CI == "left_cd" : 
-        prop_gametes[3,0:N//2+1] = CI_prop_drive
-    if CI == "center" : 
+        prop_gametes[3,0:N//2+1] = CI_prop_drive 
+    if CI == "left_cd_quater" : 
+        prop_gametes[3,0:N//4+1] = CI_prop_drive
+    if CI == "center_abcd" : 
         prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
+    if CI == "center_cd" : 
+        prop_gametes[3,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive 
     prop_gametes[0,:] = 1 - np.sum(prop_gametes[1:16,:], axis=0)
     
     # Speed of the wave, function of time
@@ -155,7 +165,7 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
             # Compute the speed
             if len(position) > 20 : 
                 time = np.append(time, t)
-                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
+                speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))*dx/dt)
             # if the treshold value of the wave is outside the window, stop the simulation  
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
                 print("t =",t)
@@ -166,11 +176,6 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
             if show_graph_x :
                 graph_x(X, t, prop_gametes)
             nb_graph += 1
-        # We calculate the speed each time we make a graph and store this speed.
-        if CI != "equal" and t >= T/10 :
-            # first line : time, second line : speed of the wave at the corresponding time
-            time = np.append(time, t)
-            speed_fct_of_time = np.append(speed_fct_of_time, np.mean(np.diff(position[int(4*len(position)/5):len(position)]))/dt)
         # time graph
         if t>=mod_t*nb_point and show_graph_t :  
             points = graph_t(X, t, prop_gametes, coef_gametes_couple, points, nb_point)
@@ -187,20 +192,20 @@ def continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x):
             ax.plot(time, speed_fct_of_time) 
             ax.set(xlabel='Time', ylabel='Speed') 
             ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
-            ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)
+            #ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)
             plt.rc('legend', fontsize=legend_size)
             plt.grid() 
-            plt.gca().set_ylim(bottom=0)
             if save_fig :
                 save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")                         
             plt.show() 
         if np.shape(position)[0] == 0 :
             print('No wave')
-        
-    file = open(f"../outputs/cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}/parameters.txt", "w") 
-    file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \ndif = {dif} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
-    file.close()
+
     
+    #file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
+    #file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \nm = {m} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
+    #file.close()
+   
     return(prop_gametes, time, speed_fct_of_time)  
 
 
@@ -214,7 +219,7 @@ def graph_x(X, t, prop_gametes):
             ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=line_size)
         for i in range(3) :
             if [alleleA,alleleB,alleleCD][i] :
-                lab = ['A','B','C or D'][i]
+                lab = [r'$X_A$',r'$X_B$',r'$X_C/X_D$'][i]
                 col = ['yellowgreen','orange','deeppink'][i]
                 ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=line_size)
             if [cd,CdcD,CD][i] :
@@ -234,7 +239,11 @@ def graph_x(X, t, prop_gametes):
         plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            save_fig_or_data(out_dir, fig, [], f"t_{t}")  
+            num = str(int(t)//mod_x)
+            if len(num)==1: num = '0'+'0'+num
+            if len(num)==2: num = '0'+num
+            save_fig_or_data(out_dir, fig, [], f"{num}")
+            #save_fig_or_data(out_dir, fig, [], f"t_{t}")  
         plt.show() 
         
 # Proportion of allele in time at spatial site 'focus x'
@@ -281,15 +290,15 @@ def speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale) :
     for step in step_range :
         N = int(L/step)
         step_record = np.append(step_record, step) 
-        prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
-        speed_record = np.append(speed_record, speed[-1])    
-        print("step :", step, " and speed :", speed[-1])         
+        prop, time, speed = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x) 
+        speed_record = np.append(speed_record, speed[-1]) 
+        print("step :", step, "and speed :", speed[-1])         
     fig, ax = plt.subplots()
     ax.plot(step_record, speed_record) 
     if log_scale : ax.set_xscale('log')
-    ax.set(xlabel='Size of a spatial step', ylabel='Speed') 
+    ax.set(xlabel='Spatial step size', ylabel='Speed') 
     ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
-    ax.set_title('Speed of the wave C or D function of the spatial steps', fontsize = title_size, loc='right')
+    #ax.set_title('Speed of the wave C or D function of the spatial steps', fontsize = title_size, loc='right')
     plt.grid()
     
     if save_fig :
@@ -312,6 +321,7 @@ def save_fig_or_data(new_dir, fig, data, title):
             print ("Fail : %s " % new_dir)
     # Save figure
     if fig != [] :
+        fig.savefig(f"../outputs/{new_dir}/{title}.png", format='png')  
         fig.savefig(f"../outputs/{new_dir}/{title}.pdf", format='pdf')  
         fig.savefig(f"../outputs/{new_dir}/{title}.svg", format='svg')
     # Save datas
@@ -334,34 +344,36 @@ sp = 0.1
 # Coefficents for the reaction term
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
-# Diffusion rate
-dif = 0.2
-
 # Initial repartition
-CI = "left"      # "equal"   "left"  "center"  "left_cd"
+CI = "left_cd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 600         # final time
-L = 200         # length of the spatial domain
-M = 6000        # number of time steps
-N = 2000         # number of spatial steps
+T = 600          # final time
+L = 200          # length of the spatial domain
+M = T*10         # number of time steps
+N = L         # number of spatial steps
+
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
-                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit  
+                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit           
+            
+# Diffusion rate: constant or depending on m, dx and dt
+diffusion = 'cst dif'     # cst dif or cst m
+cst_value = 0.2           # value of the constant diffusion rate or value of the constant migration rate, depending on the line before 
 
 # Graphics
-show_graph_x = True       # whether to show the graph in space or not
-show_graph_ini = True     # whether to show the allele graph or not at time t=0
-show_graph_fin = False    # whether to show the allele graph or not at time t=T
+show_graph_x = True      # whether to show the graph in space or not
+show_graph_ini = True    # whether to show the allele graph or not at time t=0
+show_graph_fin = True    # whether to show the allele graph or not at time t=T
 
 show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T//4               # time at which to draw allele graphics
-mod_t = T//50              # time points used to draw the graph in time
-save_fig = True           # save the figures (.pdf)
+mod_x = T//4              # time at which to draw allele graphics
+mod_t = T//50             # time points used to draw the graph in time
+save_fig = True       # save the figures
 
 # Which alleles to show in the graph
 WT = False             
@@ -371,13 +383,13 @@ checkcd = False; cd = checkcd; CdcD = cd; CD = cd
 
 # To compute the speed function of spatial step size
 show_speed_fct_of_spatial_step = False
-step_min = 0.1
+step_min = 0.01
 step_max = 3 
 nb_step = 200
 log_scale = False
 
 # Where to store the outputs
-out_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
+out_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value}_{CI}"
 
 
 ############################### Evolution ########################################
@@ -385,10 +397,15 @@ out_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_dif_{dif}_{CI}"
 if show_speed_fct_of_spatial_step :
     speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale)
 else : 
-    prop, time, speed = continuous_evolution(r,sd,st,sp,dif,gamma,T,L,M,N,theta,mod_x) 
+    prop, time, speed = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x) 
+    print("Speed :",speed[-1])
     
 
 ############################### Control ########################################
+  
+# Diffusion rate
+if diffusion == 'cst dif': dif = cst_value
+if diffusion == 'cst m':  dt = T/M; dx = L/N; m = cst_value; dif = (m*dx**2)/(2*dt) 
 
 # Check ab
 if checkab : 
@@ -408,5 +425,5 @@ if checkcd :
 
 ############################### Print parameters ########################################
 
-print('\nr = ',r,' sd =', sd,' dif =',dif,' gamma =',gamma, ' CI =', CI)
+print('\nr = ',r,' sd =', sd, diffusion, cst_value,' gamma =',gamma, ' CI =', CI)
 print('T =',T,' L =',L,' M =',M,' N =',N,' theta =',theta, ' f0 =', CI_prop_drive)

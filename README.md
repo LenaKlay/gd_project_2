@@ -1,2 +1,3 @@
 # gd_project_2
-Code for the article of Sally and Freek.
+Can we confine gene drive ? Code for the continuous space domain. 
+(Article written by Frederik J.H. de Haas and Sarah P. Otto)
