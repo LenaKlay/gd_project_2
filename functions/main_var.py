@@ -102,10 +102,10 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
     if CI == "left_abcd" : 
         prop_gametes[15,0:N//2+1] = CI_prop_drive  
     if CI == "left_cd" : 
-        prop_gametes[3,0:N//2+1] = CI_prop_drive
+        prop_gametes[3,0:N//2+1] = CI_prop_drive     
     if CI == "left_ab_cd" : 
-        prop_gametes[15,0:N//2+1-CI_lenght] = CI_prop_drive
-        prop_gametes[3,N//2+1-CI_lenght:N//2+1] = CI_prop_drive  
+        prop_gametes[15,0:101-CI_lenght] = CI_prop_drive
+        prop_gametes[3,101-CI_lenght:101] = CI_prop_drive  
     if CI == "center_abcd" : 
         prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
     if CI == "center_cd" : 
@@ -339,7 +339,7 @@ theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
 # Spatial domain
 #X = np.linspace(0,L,201)   # homogeneous
 X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,2)))   # heterogeneous half half
-#X = np.sort(np.random.random_sample(L)*L)     # heterogeneous randomized
+#X = np.sort(np.random.random_sample(L*2)*L)     # heterogeneous randomized
             
 # Diffusion rate: constant or depending on m, dx and dt
 diffusion = 'cst dif'     # cst dif or cst m
@@ -371,7 +371,7 @@ out_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value
 ############################### Evolution ########################################
  
 prop, time, speed = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x) 
-print(speed)
+
 
 print('\nr = ',r,' sd =', sd, diffusion, cst_value, 'gamma =', gamma, ' CI =', CI)
 print('T =',T,' L =',L,' M =',M, 'theta =',theta, ' f0 =', CI_prop_drive)

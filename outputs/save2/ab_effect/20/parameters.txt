@@ -1,0 +1,12 @@
+Parameters : 
+r = 0.5 
+sd = 0.02 
+st = 0.9 
+sp = 0.1 
+cst dif = 0.2 
+gamma = 0.9 
+CI = left_ab_cd 
+T = 600 
+M = 6000 
+theta = 0.5 
+f0 = 1

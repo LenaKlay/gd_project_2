@@ -239,11 +239,11 @@ def graph_x(X, t, prop_gametes):
         plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            num = str(int(t)//mod_x)
-            if len(num)==1: num = '0'+'0'+num
-            if len(num)==2: num = '0'+num
-            save_fig_or_data(out_dir, fig, [], f"{num}")
-            #save_fig_or_data(out_dir, fig, [], f"t_{t}")  
+            #num = str(int(t)//mod_x)
+            #if len(num)==1: num = '0'+'0'+num
+            #if len(num)==2: num = '0'+num
+            #save_fig_or_data(out_dir, fig, [], f"{num}")
+            save_fig_or_data(out_dir, fig, [], f"t_{t}")  
         plt.show() 
         
 # Proportion of allele in time at spatial site 'focus x'
@@ -339,21 +339,21 @@ gamma = 0.9
 # Fitness disadvantage
 sd = 0.02
 st = 0.9
-sp = 0.1
+sp = 0.1   # 0.1 pos, 0.5 neg
 
 # Coefficents for the reaction term
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
 # Initial repartition
-CI = "left_cd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
+CI = "left_abcd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 60          # final time
-L = 200          # length of the spatial domain
+T = 4000         # final time
+L = 1000          # length of the spatial domain
 M = T*10         # number of time steps
-N = L         # number of spatial steps
+N = L*10         # number of spatial steps
 
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit           
@@ -371,7 +371,7 @@ show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T//4              # time at which to draw allele graphics
+mod_x = T//10              # time at which to draw allele graphics
 mod_t = T//50             # time points used to draw the graph in time
 save_fig = True       # save the figures
 
