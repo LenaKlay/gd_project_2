@@ -196,13 +196,16 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
    
     # speed function of time
     if CI != "equal" :
-        if len(speed_fct_of_time) != 0 and show_graph_x :        
-            fig, ax = plt.subplots()
+        if len(speed_fct_of_time) != 0 and show_graph_x :   
+            fig, ax = plt.subplots()                  
             ax.plot(time, speed_fct_of_time) 
+            plt.hlines(y=0, color='dimgray', xmin=time[0], xmax=time[-1])
+            ax.set(xlabel='Time', ylabel='Speed', ylim = [-0.1,1.7])   
             #ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)  
             ax.grid()
             if save_fig :
-                save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")    
+                save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")   
+                save_fig_or_data(out_dir, [], time, "time")    
             plt.show() 
         if np.shape(position)[0] == 0 :
             print('No wave')
@@ -325,12 +328,11 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 # Initial repartition
 CI = "left_cd"      # "equal"  "left_abcd"  "left_ab_cd" "left_cd" "center_abcd" "center_cd" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+CI_lenght = 0      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
                     # for "left_ab_cd", lenght of the abCD genotype domain
 
 # Numerical parameters
-# Numerical parameters
-T = 600         # final time
+T = 600          # final time
 L = 200          # length of the spatial domain
 M = T*10         # number of time steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
@@ -338,8 +340,8 @@ theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
             
 # Spatial domain
 #X = np.linspace(0,L,201)   # homogeneous
-X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,2)))   # heterogeneous half half
-#X = np.sort(np.random.random_sample(L*2)*L)     # heterogeneous randomized
+#X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,2)))   # heterogeneous half half
+X = np.sort(np.random.random_sample(L*3)*L)     # heterogeneous randomized
             
 # Diffusion rate: constant or depending on m, dx and dt
 diffusion = 'cst dif'     # cst dif or cst m
@@ -370,7 +372,7 @@ out_dir = f"var_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value
 
 ############################### Evolution ########################################
  
-prop, time, speed = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x) 
+prop, time, speed_fct_of_time = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x) 
 
 
 print('\nr = ',r,' sd =', sd, diffusion, cst_value, 'gamma =', gamma, ' CI =', CI)
