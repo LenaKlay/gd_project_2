@@ -157,8 +157,8 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
         for i in range(16) : 
             #prop_gametes[i,:] = la.spsolve(B_, B.dot(prop_gametes[i,:]) + dt*reaction_term[i,:])
             prop_gametes[i,1:-1] = la.spsolve(B_, B.dot(prop_gametes[i,1:-1]) + dt*reaction_term[i,1:-1])
-            prop_gametes[i,0] = prop_gametes[i,1]   # alpha=0
-            prop_gametes[i,-1] = prop_gametes[i,-2]  # beta=0
+            prop_gametes[i,0] = prop_gametes[i,1]   # Neumann condition alpha=0
+            prop_gametes[i,-1] = prop_gametes[i,-2]  # Neumann condition beta=0
         
         if CI != "equal" :
             # Position of the wave cd
@@ -340,8 +340,8 @@ theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
             
 # Spatial domain
 #X = np.linspace(0,L,201)   # homogeneous
-#X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,2)))   # heterogeneous half half
-X = np.sort(np.random.random_sample(L*3)*L)     # heterogeneous randomized
+X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,2)))   # heterogeneous half half
+#X = np.sort(np.random.random_sample(L*3)*L)     # heterogeneous randomized
             
 # Diffusion rate: constant or depending on m, dx and dt
 diffusion = 'cst dif'     # cst dif or cst m

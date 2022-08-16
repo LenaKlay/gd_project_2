@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import scipy.sparse as spa
 import scipy.sparse.linalg  as la
 import os
+import matplotlib.colors as mcolors 
 # Change font to serif
 plt.rcParams.update({'font.family':'serif'})
 
@@ -89,37 +90,43 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     if diffusion == 'cst dif': dif = cst_value
     if diffusion == 'cst m': m = cst_value; dif = (m*dx**2)/(2*dt) 
     
-    # Spatial domain (1D)
-    X = np.linspace(0,N,N+1)*dx  
+    # Spatial domain 
+    if dim == 1:
+        X = np.linspace(0,N,N+1)*dx  
+        # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
+        prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
+        #if CI == "equal" :                              
+        #    prop_gametes = np.ones((16,N+1))*(1/16)     
+        if CI == "equal" :                              
+            prop_gametes[0:4,:] = np.ones((4,N+1))*(1/4)   
+        if CI == "left_abcd" : 
+            prop_gametes[15,0:N//2+1] = CI_prop_drive  
+        if CI == "left_cd" : 
+            prop_gametes[3,0:N//2+1] = CI_prop_drive 
+        if CI == "left_cd_quater" : 
+            prop_gametes[3,0:N//4+1] = CI_prop_drive
+        if CI == "center_abcd" : 
+            prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
+        if CI == "center_cd" : 
+            prop_gametes[3,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive 
+        prop_gametes[0,:] = 1 - np.sum(prop_gametes[1:16,:], axis=0)    
     
-    # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
-    prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
-    #if CI == "equal" :                              
-    #    prop_gametes = np.ones((16,N+1))*(1/16)     
-    if CI == "equal" :                              
-        prop_gametes[0:4,:] = np.ones((4,N+1))*(1/4)   
-    if CI == "left_abcd" : 
-        prop_gametes[15,0:N//2+1] = CI_prop_drive  
-    if CI == "left_cd" : 
-        prop_gametes[3,0:N//2+1] = CI_prop_drive 
-    if CI == "left_cd_quater" : 
-        prop_gametes[3,0:N//4+1] = CI_prop_drive
-    if CI == "center_abcd" : 
-        prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
-    if CI == "center_cd" : 
-        prop_gametes[3,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive 
-    prop_gametes[0,:] = 1 - np.sum(prop_gametes[1:16,:], axis=0)
+        # Speed of the wave, function of time
+        position = np.array([])             # list containing the first position where the proportion of wild alleles is higher than the treshold value.
+        time = np.array([])                 # list containing the time at which we calculate the speed.
+        speed_fct_of_time = np.array([])    # list containing the speed corresponding to the time list.
+        treshold = 0.5                      # indicates which position of the wave we follow to compute the speed (first position where the C-D wave come under the threshold)    
     
-    # Speed of the wave, function of time
-    position = np.array([])             # list containing the first position where the proportion of wild alleles is higher than the treshold value.
-    time = np.array([])                 # list containing the time at which we calculate the speed.
-    speed_fct_of_time = np.array([])    # list containing the speed corresponding to the time list.
-    treshold = 0.5                      # indicates which position of the wave we follow to compute the speed (first position where the C-D wave come under the threshold)    
-    
+    if dim == 2:
+        prop_gametes = np.zeros((16,(N+1)**2)) 
+             
+        
+        
     # Spatial graph 
     nb_graph = 1
     if show_graph_ini :
-        graph_x(X, 0, prop_gametes)
+         if dim == 1: graph_x(0, prop_gametes, X)
+         if dim == 2: graph_xy(0, prop_gametes, allele_nb)
       
     # Time graph
     nb_point = 1
@@ -127,19 +134,39 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
         points = np.zeros((5,int(T/mod_t)+1))
         points = graph_t(X, 0, prop_gametes, coef_gametes_couple, points, 0)
     
-    # Matrix
-    C0 = -2*np.ones(N-1); C0[0]=C0[0]+1; C0[-1]=C0[-1]+1               
-    C1 = np.ones(N-1) 
-    A = spa.spdiags([C1,C0,C1],[-1,0,1], N-1, N-1)        # 1D discrete Laplacian with Neumann boundary conditions (derivative=0)  
+     # Matrix and index
+    if dim == 1:
+        # Build the Laplacian matrix 
+        C0 = -2*np.ones(N-1); C0[0]=C0[0]+1; C0[-1]=C0[-1]+1               
+        C1 = np.ones(N-1) 
+        A = spa.spdiags([C1,C0,C1],[-1,0,1], N-1, N-1)        # 1D discrete Laplacian with Neumann boundary conditions (derivative=0)
+        B = spa.identity(N-1)+((1-theta)*dif*dt/dx**2)*A      # Matrix for the explicit side of the Crank Nicholson scheme  
+        B_ = spa.identity(N-1)-(theta*dif*dt/dx**2)*A         # Matrix for the implicit side of the Crank Nicholson scheme  
+        
+    if dim == 2:
+        # Build the Laplacian matrix 
+        index_diag_mat = np.arange(0,(N-1)**2+1,N-1)                  # (0, N-1, 2*(N-1), 3*(N-1), ....)
+        C0 = -4*np.ones((N-1)**2); C0[np.array([0,N-2,(N-1)**2-(N-1),(N-1)**2-1])]=-2   # place -2
+        C0[1:N-2] = -3; C0[(N-1)**2-(N-1)+1:(N-1)**2-1]=-3                              # place -3 in between -2      
+        C0[index_diag_mat[1:-2]] = -3; C0[index_diag_mat[2:-1]-1] = -3                                  # place the others -3
+        C1 = np.ones((N-1)**2+1); C1[index_diag_mat]=0
+        C2 = np.ones((N-1)**2)
+        A = spa.spdiags([C2,C1[1:],C0,C1[:-1],C2],[-N+1,-1,0,1,N-1], (N-1)**2, (N-1)**2) # 1D discrete Laplacian with Neumann boundary conditions (derivative=0)
+        B = spa.identity(N-1)+((1-theta)*dif*dt/dx**2)*A      # Matrix for the explicit side of the Crank Nicholson scheme  
+        B_ = spa.identity(N-1)-(theta*dif*dt/dx**2)*A         # Matrix for the implicit side of the Crank Nicholson scheme  
+        # N,S,W,E the four cardinal points (Exterior index)
+        index_N = np.arange(N+1,(N+1)*N,N+1); index_S = np.arange(N+1,(N+1)*N,N+1)+N; index_W = np.arange(1,N,1); index_E = np.arange(N*(N+1)+1,(N+1)**2-1,1) 
+        index_NW = 0*np.ones(1); index_NE = ((N+1)**2-(N+1))*np.ones(1); index_SW = N*np.ones(1); index_SE = ((N+1)**2-1)*np.ones(1)
+        index_exterior = np.sort(np.concatenate((index_N, index_S, index_E, index_W, index_NW, index_NE, index_SW, index_SE)))
+        index_interior = np.array(list(set(np.arange(0,(N+1)**2,1)).difference(set(index_exterior))))
+          
     
     # Example for spdiags...
     #data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
     #diags = np.array([0, -1, 2])
     #spa.spdiags(data, diags, 4, 4).toarray()
     
-    B = spa.identity(N-1)+((1-theta)*dif*dt/dx**2)*A            # Matrix for the explicit side of the Crank Nicholson scheme  
-    B_ = spa.identity(N-1)-(theta*dif*dt/dx**2)*A               # Matrix for the implicit side of the Crank Nicholson scheme  
-
+    
     # Evolution
     for t in np.linspace(dt,T,M) : 
         
@@ -148,13 +175,32 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
         reaction_term = f(prop_gametes, coef_gametes_couple)[0]
   
         for i in range(16) : 
-            prop_gametes[i,1:-1] = la.spsolve(B_, B.dot(prop_gametes[i,1:-1]) + dt*reaction_term[i,1:-1])
-            prop_gametes[i,0] = prop_gametes[i,1]   # Neumann condition alpha=0
-            prop_gametes[i,-1] = prop_gametes[i,-2] # Neumann condition beta=0
+            if dim == 1: 
+                # Interior
+                prop_gametes[i,1:-1] = la.spsolve(B_, B.dot(prop_gametes[i,1:-1]) + dt*reaction_term[i,1:-1])
+                # Boundaries conditions : Neumann (null derivative)
+                prop_gametes[i,0] = prop_gametes[i,1]  
+                prop_gametes[i,-1] = prop_gametes[i,-2]
+            if dim == 2:
+                # Interior
+                prop_gametes[i,index_interior] = la.spsolve(B_, B.dot(prop_gametes[i,index_interior]) + dt*reaction_term[i,index_interior])
+                # Boundaries conditions : Neumann (null derivative)
+                prop_gametes[i,index_N] = prop_gametes[i,index_N+1] 
+                prop_gametes[i,index_S] = prop_gametes[i,index_S-1]
+                prop_gametes[i,index_W] = prop_gametes[i,index_W+N+1] 
+                prop_gametes[i,index_E] = prop_gametes[i,index_E-(N+1)] 
+                prop_gametes[i,index_NW] = prop_gametes[i,index_NW+1] 
+                prop_gametes[i,index_NE] = prop_gametes[i,index_NE+1]
+                prop_gametes[i,index_SW] = prop_gametes[i,index_SW-1] 
+                prop_gametes[i,index_SE] = prop_gametes[i,index_SE-1] 
         
         if CI != "equal" :
             # Position of the wave cd
-            wave_cd = np.dot((1-indexABCD)[2,:]*(1-indexABCD)[3,:],prop_gametes)
+            if dim == 1:
+                wave_cd = np.dot((1-indexABCD)[2,:]*(1-indexABCD)[3,:],prop_gametes)
+            if dim == 2:
+                # we use the "middle" column of the spatial matrix to compute the speed.
+                wave_cd = np.dot((1-indexABCD)[2,:]*(1-indexABCD)[3,:],prop_gametes[index_N[(N-1)//2]:index_N[(N-1)//2]+N+1])
             # we recorde the position only if the cd wave is still in the environment. We do not recorde the 0 position since the treshold value of the wave might be outside the window.            
             if np.isin(True, wave_cd > treshold) and np.isin(True, wave_cd < 0.99) and np.where(wave_cd > treshold)[0][0] != 0 :  
                 # first position where the wave is over the treshold value
@@ -170,20 +216,22 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             if not(np.isin(False, wave_cd>treshold) and np.isin(False, wave_cd<treshold) ) :
                 print("t =",t)
                 break 
-            
-        # spatial graph  
-        if t>=mod_x*nb_graph :  
-            if show_graph_x :
-                graph_x(X, t, prop_gametes)
-            nb_graph += 1
-        # time graph
-        if t>=mod_t*nb_point and show_graph_t :  
-            points = graph_t(X, t, prop_gametes, coef_gametes_couple, points, nb_point)
-            nb_point += 1
+               
+            # spatial graph  
+            if t>=mod_x*nb_graph :  
+                if show_graph_x :
+                    if dim == 1: graph_x(t, prop_gametes, X)
+                    if dim == 2: graph_xy(t, prop_gametes, allele_nb)
+                nb_graph += 1
+                # time graph
+            if t>=mod_t*nb_point and show_graph_t and dim :  
+                points = graph_t(X, t, prop_gametes, coef_gametes_couple, points, nb_point)
+                nb_point += 1
     
     # last graph
     if show_graph_fin :   
-        graph_x(X, T, prop_gametes)
+        if dim == 1: graph_x(T, prop_gametes, X)
+        if dim == 2: graph_xy(T, prop_gametes, allele_nb)
    
     # speed function of time 
     if CI != "equal" :
@@ -208,7 +256,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     
     if show_graph_x : 
         file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
-        file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
+        file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive} \ndim = {dim}") 
         file.close()
    
     return(prop_gametes, time, speed_fct_of_time)  
@@ -218,7 +266,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
 ############################### Graph and saving figures ######################################
     
 # Proportion of allele in space at time t
-def graph_x(X, t, prop_gametes):
+def graph_x(t, prop_gametes, X):
         fig, ax = plt.subplots()
         if WT :
             ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=line_size)
@@ -250,6 +298,18 @@ def graph_x(X, t, prop_gametes):
             #save_fig_or_data(out_dir, fig, [], f"{num}")
             save_fig_or_data(out_dir, fig, [], f"t_{t}")  
         plt.show() 
+        
+        
+        
+        
+def graph_xy(t, prop_gametes, allele_nb):
+    allele_letter = ["A","B","C","D"][allele_nb]
+    fig, ax = plt.subplots() 
+    im = ax.imshow(np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)),cmap='Blues',interpolation='bicubic', aspect='auto')  
+    ax.figure.colorbar(im, ax=ax)     
+    fig.suptitle(f"Allele {allele_letter} at time {t}", fontsize=14)
+    plt.show()       
+    
         
 # Proportion of allele in time at spatial site 'focus x'
 def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
@@ -353,10 +413,10 @@ CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "A
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 600         # final time
-L = 100          # length of the spatial domain
-M = T*6         # number of time steps
-N = L         # number of spatial steps
+T = 20         # final time
+L = 6         # length of the spatial domain
+M = T*6        # number of time steps
+N = L          # number of spatial steps
 
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit           
@@ -364,6 +424,7 @@ theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
 # Diffusion rate: constant or depending on m, dx and dt
 diffusion = 'cst dif'     # cst dif or cst m
 cst_value = 0.2           # value of the constant diffusion rate or value of the constant migration rate, depending on the line before 
+dim = 2                   # number of spatial dimensions
 
 # Graphics
 show_graph_x = True      # whether to show the graph in space or not
@@ -384,6 +445,8 @@ alleleA = True; alleleB = alleleA; alleleCD = alleleA
 checkab = False; ab = checkab; AbaB = ab; AB = ab 
 checkcd = False; cd = checkcd; CdcD = cd; CD = cd
 
+if dim == 2 : allele_nb = 2
+
 # To compute the speed function of spatial step size
 show_speed_fct_of_spatial_step = False
 step_min = 0.1
@@ -392,7 +455,7 @@ nb_step = 200
 log_scale = False
 
 # Where to store the outputs
-out_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value}_{CI}"
+out_dir = f"cst_dim_{dim}_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value}_{CI}"
 
 
 ############################### Evolution ########################################
