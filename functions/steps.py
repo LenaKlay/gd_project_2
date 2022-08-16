@@ -121,3 +121,9 @@ def f(prop_gametes, coef_gametes_couple) :
     # Minus prop gametes because we are now in continuous space
     return(reaction_term, mean_fitness)
     
+    
+    
+       
+    
+    
+    

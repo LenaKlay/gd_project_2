@@ -95,10 +95,8 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
       
     # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
     prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
-    #if CI == "equal" :                              
-    #    prop_gametes = np.ones((16,N+1))*(1/16)     
     if CI == "equal" :                              
-        prop_gametes[0:4,:] = np.ones((4,N+1))*(1/4)   
+        prop_gametes = np.ones((16,N+1))*(1/16)    
     if CI == "left_abcd" : 
         prop_gametes[15,0:N//2+1] = CI_prop_drive  
     if CI == "left_cd" : 
@@ -192,7 +190,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
     
     # last graph
     if show_graph_fin :   
-        graph_x(X, T, prop_gametes)
+        graph_x(X, t, prop_gametes)
    
     # speed function of time
     if CI != "equal" :

@@ -94,10 +94,8 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     
     # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
     prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
-    #if CI == "equal" :                              
-    #    prop_gametes = np.ones((16,N+1))*(1/16)     
     if CI == "equal" :                              
-        prop_gametes[0:4,:] = np.ones((4,N+1))*(1/4)   
+        prop_gametes = np.ones((16,N+1))*(1/16)   
     if CI == "left_abcd" : 
         prop_gametes[15,0:N//2+1] = CI_prop_drive  
     if CI == "left_cd" : 
@@ -183,7 +181,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     
     # last graph
     if show_graph_fin :   
-        graph_x(X, T, prop_gametes)
+        graph_x(X, t, prop_gametes)
    
     # speed function of time 
     if CI != "equal" :
@@ -348,12 +346,12 @@ sp = 0.1   # 0.1 pos, 0.5 neg
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
 # Initial repartition
-CI = "left_cd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
+CI = "center_abcd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 600         # final time
+T = 375         # final time
 L = 100          # length of the spatial domain
 M = T*6         # number of time steps
 N = L         # number of spatial steps
