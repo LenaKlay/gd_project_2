@@ -351,7 +351,7 @@ CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "A
 CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
 
 # Numerical parameters
-T = 375         # final time
+T = 600         # final time
 L = 100          # length of the spatial domain
 M = T*6         # number of time steps
 N = L         # number of spatial steps

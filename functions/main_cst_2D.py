@@ -103,39 +103,32 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
         factor = (N+1)
          
     # Initial conditions
-    # ABCD or CD ?
+    # Introduction of  ABCD or CD ?
     if CI[-3] == '_': CI_nb_allele = 3
     if CI[-3] == 'b': CI_nb_allele = 15
     # Where to introduce the drive ? (left, center, square)
-    if CI[0] == 'l': CI_where = np.arange(0,((N+1)//2+1)*factor+1,1)
-    if CI[0] == 'c': CI_where = np.arange(((N+1-CI_lenght)//2)*factor,((N+1+CI_lenght)//2+1)*factor,1)   
-    if CI[0] == 's': edge = np.arange((N+1-CI_lenght)//2,(N+1+CI_lenght)//2,1); CI_where = np.tile(edge, len(edge))+ np.repeat(edge, len(edge))*(N+1)
+    if CI[0] == 'l': CI_where = np.arange(0,(N//2+1)*factor)
+    if CI[0] == 'c': 
+        if CI_lenght >= N : print('CI_lenght bigger than the domain lenght')
+        else: CI_where = np.arange(((N-CI_lenght)//2+1)*factor, ((N+CI_lenght)//2+1)*factor)
+    if CI[0] == 's':
+        if CI_lenght >= N : print('CI_lenght bigger than the domain lenght')
+        else : edge = np.arange((N-CI_lenght)//2+1, (N+CI_lenght)//2+1); CI_where = np.tile(edge, len(edge))+np.repeat(edge, len(edge))*(N+1)
+    
     # Special case: equal CI means that all genotypes are present at the beginning, in the same proportion.
     if CI == "equal": prop_gametes = np.ones((16,tot_lenght))*(1/16)   
     # Drive introduction
     else : prop_gametes[CI_nb_allele, CI_where] = CI_prop_drive 
     # Complete the domain with wild-type individuals
     prop_gametes[0,:] = 1 - np.sum(prop_gametes[1:16,:], axis=0)   
-    
-    #if CI == "equal" :                              
-    #    prop_gametes = np.ones((16,tot_lenght))*(1/16)  
-    #if CI == "left_abcd" : 
-    #    prop_gametes[15,0:((N+1)//2)*factor+1] = CI_prop_drive  
-    #if CI == "left_cd" : 
-    #    prop_gametes[3,0:((N+1)//2)*factor+1] = CI_prop_drive 
-    #if CI == "center_abcd" :      
-    #    prop_gametes[15,((N+1-CI_lenght)//2)*factor:((N+1+CI_lenght)//2)*factor] = CI_prop_drive  
-    #if CI == "center_cd" : 
-    #    prop_gametes[3,((N+1-CI_lenght)//2)*factor:((N+1+CI_lenght)//2)*factor] = CI_prop_drive 
-    # special case with dim=2, where the drive is introduced in a centered square
-            
+      
           
     # Speed of the wave, function of time
     position = np.array([])             # list containing the first position where the proportion of wild alleles is higher than the treshold value.
     time = np.array([])                 # list containing the time at which we calculate the speed.
     speed_fct_of_time = np.array([])    # list containing the speed corresponding to the time list.
     treshold = 0.5                      # indicates which position of the wave we follow to compute the speed (first position where the C-D wave come under the treshold)    
-            
+       
     # Spatial graph 
     nb_graph = 1
     if show_graph_ini :
@@ -213,8 +206,8 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             if dim == 1:
                 wave_cd = np.dot((1-indexABCD)[2,:]*(1-indexABCD)[3,:],prop_gametes)
             if dim == 2:
-                # we use the "middle" column of the spatial matrix to compute the speed.
-                wave_cd = np.dot((1-indexABCD)[2,:]*(1-indexABCD)[3,:],prop_gametes[:,index_N[(N-1)//2]:index_N[(N-1)//2]+N+1])
+                # we use the "middle" line of the spatial matrix to compute the speed.
+                wave_cd = np.dot((1-indexABCD)[2,:]*(1-indexABCD)[3,:],prop_gametes[:,np.arange(index_W[(N-1)//2],index_E[(N-1)//2]+N+1,N+1)])
             # we recorde the position only if the cd wave is still in the environment. We do not recorde the 0 position since the treshold value of the wave might be outside the window.            
             if np.isin(True, wave_cd > treshold) and np.isin(True, wave_cd < 0.99) and np.where(wave_cd > treshold)[0][0] != 0 :  
                 # first position where the wave is over the treshold value
@@ -277,7 +270,6 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     return(prop_gametes, time, speed_fct_of_time)  
 
 
-
 ############################### Graph and saving figures ######################################
     
 # Proportion of allele in space at time t
@@ -320,7 +312,7 @@ def graph_x(t, prop_gametes, X):
 def graph_xy(t, prop_gametes, allele_nb):
     allele_letter = ["A","B","C","D"][allele_nb]
     fig, ax = plt.subplots() 
-    im = ax.imshow(np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)),cmap='Blues', aspect='auto')  
+    im = ax.imshow(np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)).transpose(),cmap='Blues', aspect='auto')  
     ax.figure.colorbar(im, ax=ax)     
     fig.suptitle(f"Allele {allele_letter} at time {t}", fontsize=14)
     if save_fig :
@@ -427,13 +419,14 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 # Initial repartition
 CI = "left_cd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+CI_lenght = 3      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+
 
 # Numerical parameters
-T = 600        # final time
-L = 100        # length of the spatial domain
-M = T*6        # number of time steps
-N = L          # number of spatial steps
+T = 600         # final time
+L = 100          # length of the spatial domain
+M = T*6         # number of time steps
+N = L         # number of spatial steps
 
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit           
