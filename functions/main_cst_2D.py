@@ -133,7 +133,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     nb_graph = 1
     if show_graph_ini :
          if dim == 1: graph_x(0, prop_gametes, X)
-         if dim == 2: graph_xy(0, prop_gametes, allele_nb)
+         if dim == 2: graph_xy(0, prop_gametes)
       
     # Time graph
     nb_point = 1
@@ -228,7 +228,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             if t>=mod_x*nb_graph :  
                 if show_graph_x :
                     if dim == 1: graph_x(t, prop_gametes, X)
-                    if dim == 2: graph_xy(t, prop_gametes, allele_nb)
+                    if dim == 2: graph_xy(t, prop_gametes)
                 nb_graph += 1
                 # time graph
             if t>=mod_t*nb_point and show_graph_t and dim :  
@@ -238,14 +238,13 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     # last graph
     if show_graph_fin :   
         if dim == 1: graph_x(t, prop_gametes, X)
-        if dim == 2: graph_xy(t, prop_gametes, allele_nb)
+        if dim == 2: graph_xy(t, prop_gametes)
    
     # speed function of time 
     if CI != "equal" :
         if np.shape(position)[0] != 0 and show_graph_x :        
             fig, ax = plt.subplots()
-            if dim == 1 : ax.plot(time, speed_fct_of_time) 
-            if dim == 2 : ax.plot(time, speed_fct_of_time*-1) 
+            ax.plot(time, speed_fct_of_time)  
             ax.set(xlabel='Time', ylabel='Speed', ylim = [-0.25,0.5])             
             plt.hlines(y=0, color='dimgray', xmin=time[0], xmax=time[-1])
             ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
@@ -309,15 +308,17 @@ def graph_x(t, prop_gametes, X):
         
         
         
-def graph_xy(t, prop_gametes, allele_nb):
-    allele_letter = ["A","B","C","D"][allele_nb]
-    fig, ax = plt.subplots() 
-    im = ax.imshow(np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)).transpose(),cmap='Blues', aspect='auto')  
-    ax.figure.colorbar(im, ax=ax)     
-    fig.suptitle(f"Allele {allele_letter} at time {t}", fontsize=14)
-    if save_fig :
-        save_fig_or_data(out_dir, fig, [], f"t_{t}")
-    plt.show()       
+def graph_xy(t, prop_gametes):
+    for allele_nb in np.arange(0,3):
+        if [alleleA,alleleB,alleleCD][allele_nb] :
+            allele_letter = ["A","B","C"][allele_nb]
+            fig, ax = plt.subplots() 
+            im = ax.imshow(np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)).transpose(),cmap='Blues', aspect='auto', vmin=0, vmax=1)  
+            ax.figure.colorbar(im, ax=ax)     
+            fig.suptitle(f"Allele {allele_letter} at time {np.round(t,2)}", fontsize=14)
+            if save_fig :
+                save_fig_or_data(out_dir, fig, [], f"{allele_letter}_t_{t}")
+            plt.show()       
     
         
 # Proportion of allele in time at spatial site 'focus x'
@@ -416,25 +417,25 @@ sp = 0.1   # 0.1 pos, 0.5 neg
 # Coefficents for the reaction term
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
-# Initial repartition
-CI = "left_cd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
-CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_lenght = 3      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
-
-
 # Numerical parameters
-T = 600         # final time
-L = 100          # length of the spatial domain
+dim = 2         # number of spatial dimensions (1 or 2)
+T = 300         # final time
+L = 100         # length of the spatial domain
 M = T*6         # number of time steps
-N = L         # number of spatial steps
+N = L           # number of spatial steps
 
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
-                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit           
+                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit   
+                 
+# Initial repartition
+CI = "square_abcd"      # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
+CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
+CI_lenght = 20      # /!\ should be < L. For "center" and "square", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+
             
 # Diffusion rate: constant or depending on m, dx and dt
 diffusion = 'cst dif'     # cst dif or cst m
 cst_value = 0.2           # value of the constant diffusion rate or value of the constant migration rate, depending on the line before 
-dim = 2                   # number of spatial dimensions
 
 # Graphics
 show_graph_x = True      # whether to show the graph in space or not
@@ -445,7 +446,7 @@ show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T//4              # time at which to draw allele graphics
+mod_x = T//4             # time at which to draw allele graphics
 mod_t = T//50             # time points used to draw the graph in time
 save_fig = True       # save the figures
 
@@ -454,8 +455,6 @@ WT = False
 alleleA = True; alleleB = alleleA; alleleCD = alleleA
 checkab = False; ab = checkab; AbaB = ab; AB = ab 
 checkcd = False; cd = checkcd; CdcD = cd; CD = cd
-
-if dim == 2 : allele_nb = 2
 
 # To compute the speed function of spatial step size
 show_speed_fct_of_spatial_step = False
