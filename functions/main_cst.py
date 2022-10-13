@@ -94,19 +94,21 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     
     # Initialization (frequency vector : abcd  abcD  abCd  abCD  aBcd  aBcD  aBCd  aBCD  Abcd  AbcD  AbCd  AbCD  ABcd  ABcD  ABCd  ABCD)   
     prop_gametes = np.zeros((16,N+1))   # prop_gametes : each row represents a gamete, each column represents a site in space  
-    if CI == "equal" :                              
-        prop_gametes = np.ones((16,N+1))*(1/16)   
-    if CI == "left_abcd" : 
-        prop_gametes[15,0:N//2+1] = CI_prop_drive  
-    if CI == "left_cd" : 
-        prop_gametes[3,0:N//2+1] = CI_prop_drive 
-    if CI == "left_cd_quater" : 
-        prop_gametes[3,0:N//4+1] = CI_prop_drive
-    if CI == "center_abcd" : 
-        prop_gametes[15,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive  
-    if CI == "center_cd" : 
-        prop_gametes[3,N//2-CI_lenght//2:N//2+CI_lenght//2+1] = CI_prop_drive 
-    prop_gametes[0,:] = 1 - np.sum(prop_gametes[1:16,:], axis=0)
+    # Introduction of  ABCD or CD ?
+    if CI[-3] == '_': CI_nb_allele = 3
+    if CI[-3] == 'b': CI_nb_allele = 15
+    # Where to introduce the drive ? (left, center, square)
+    if CI[0] == 'l': CI_where = np.arange(0,(N//2+1))
+    if CI[0] == 'c': 
+        if CI_lenght >= N : print('CI_lenght bigger than the domain lenght')
+        else: CI_where = np.arange(((N-CI_lenght)//2+1), ((N+CI_lenght)//2+1))
+    # Special case: equal CI means that all genotypes are present at the beginning, in the same proportion.
+    if CI == "equal": prop_gametes = np.ones((16,N+1))*(1/16)   
+    # Drive introduction
+    else : prop_gametes[CI_nb_allele, CI_where] = CI_prop_drive 
+    # Complete the domain with wild-type individuals
+    prop_gametes[0,:] = 1 - np.sum(prop_gametes[1:16,:], axis=0)   
+      
     
     # Speed of the wave, function of time
     position = np.array([])             # list containing the first position where the proportion of wild alleles is higher than the treshold value.
@@ -180,7 +182,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             nb_point += 1
     
     # last graph
-    if show_graph_fin :   
+    if show_graph_end :   
         graph_x(X, t, prop_gametes)
    
     # speed function of time 
@@ -345,19 +347,20 @@ sp = 0.1   # 0.1 pos, 0.5 neg
 # Coefficents for the reaction term
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
-# Initial repartition
-CI = "center_abcd"     # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
-CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_lenght = 20      # for "ABCD_center", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
-
 # Numerical parameters
 T = 600         # final time
-L = 100          # length of the spatial domain
-M = T*6         # number of time steps
-N = L         # number of spatial steps
+L = 200          # length of the spatial domain
+M = T*10         # number of time steps
+N = L*10         # number of spatial steps
 
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
-                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit           
+                 # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit   
+                 
+# Initial repartition
+CI = "left_abcd"             # "equal"  "left_abcd" "left_cd" "center_abcd" "center_cd" 
+CI_prop_drive = 1            # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
+CI_lenght = 20*int(N/L)      # /!\ should be < N. For "center_abcd" and "center_cd", lenght of the initial drive condition in the center, in number of spatial steps.
+
             
 # Diffusion rate: constant or depending on m, dx and dt
 diffusion = 'cst dif'     # cst dif or cst m
@@ -365,8 +368,8 @@ cst_value = 0.2           # value of the constant diffusion rate or value of the
 
 # Graphics
 show_graph_x = True      # whether to show the graph in space or not
-show_graph_ini = True   # whether to show the allele graph or not at time t=0
-show_graph_fin = True    # whether to show the allele graph or not at time t=T
+show_graph_ini = True    # whether to show the allele graph or not at time t=0
+show_graph_end = True    # whether to show the allele graph or not at time t=T
 
 show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
@@ -396,7 +399,7 @@ out_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value
 ############################### Evolution ########################################
  
 if show_speed_fct_of_spatial_step :
-    show_graph_x = False; show_graph_ini = False; show_graph_fin = False
+    show_graph_x = False; show_graph_ini = False; show_graph_end = False
     speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale)
 else : 
     prop, time, speed_fct_of_time = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x) 
@@ -411,7 +414,7 @@ if diffusion == 'cst m':  dt = T/M; dx = L/N; m = cst_value; dif = (m*dx**2)/(2*
 
 # Check ab
 if checkab : 
-    ab_,aB_,Ab_,AB_ = continuous_evolution_ab(r,sd,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_x,show_graph_x,ab,AbaB,AB)
+    ab_,aB_,Ab_,AB_ = continuous_evolution_ab(r,sd,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_end,mod_x,show_graph_x,ab,AbaB,AB)
     print('ab check :',(abs(ab_ - np.sum(prop[0:4], axis=0)) < 0.001)[0])
     print('aB check :',(abs(aB_ - np.sum(prop[4:8], axis=0)) < 0.001)[0])
     print('Ab check :',(abs(Ab_ - np.sum(prop[8:12], axis=0)) < 0.001)[0])
@@ -419,7 +422,7 @@ if checkab :
 
 # Check cd
 if checkcd :    
-    cd_,cD_,Cd_,CD_ = continuous_evolution_cd(r,sp,st,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_x,show_graph_x,cd,CdcD,CD)
+    cd_,cD_,Cd_,CD_ = continuous_evolution_cd(r,sp,st,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_end,mod_x,show_graph_x,cd,CdcD,CD)
     print('cd check :',(abs(cd_ - np.sum(prop[(0,4,8,12),:], axis=0)) < 0.001)[0])
     print('cD check :',(abs(cD_ - np.sum(prop[(1,5,9,13),:], axis=0)) < 0.001)[0])
     print('Cd check :',(abs(Cd_ - np.sum(prop[(2,6,10,14),:], axis=0)) < 0.001)[0])

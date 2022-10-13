@@ -1,0 +1,15 @@
+Parameters : 
+r = 0.5 
+sd = 0.02 
+st = 0.9 
+sp = 0.1 
+cst dif = 0.2 
+gamma = 0.9 
+CI = square_abcd 
+T = 400 
+L = 80 
+M = 2400 
+N = 160 
+theta = 0.5 
+f0 = 1 
+dim = 2

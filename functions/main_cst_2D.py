@@ -22,6 +22,10 @@ label_size = 17
 legend_size = 12
 line_size = 3
 
+# Colors used
+col_pink = ['indigo', 'purple', 'darkmagenta', 'm', 'mediumvioletred', 'crimson', 'deeppink', 'hotpink', 'lightpink', 'pink' ]    
+col_blue = ['navy', 'blue','royalblue', 'cornflowerblue', 'lightskyblue']    
+
 ########################## External functions #######################################
 
 # Fitness, conversion, recombinaison...
@@ -130,10 +134,10 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     treshold = 0.5                      # indicates which position of the wave we follow to compute the speed (first position where the C-D wave come under the treshold)    
        
     # Spatial graph 
-    nb_graph = 1
+    nb_graph = 1; Z_list = np.zeros((T//mod_x+2,1000,1000))
     if show_graph_ini :
          if dim == 1: graph_x(0, prop_gametes, X)
-         if dim == 2: graph_xy(0, prop_gametes)
+         if dim == 2: graph_xy(0, prop_gametes); Z_list = graph_xy_contour(0, prop_gametes, Z_list, nb_graph)
       
     # Time graph
     nb_point = 1
@@ -227,18 +231,20 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             # spatial graph  
             if t>=mod_x*nb_graph :  
                 if show_graph_x :
+                    nb_graph += 1
                     if dim == 1: graph_x(t, prop_gametes, X)
-                    if dim == 2: graph_xy(t, prop_gametes)
-                nb_graph += 1
+                    if dim == 2: graph_xy(t, prop_gametes); Z_list = graph_xy_contour(t, prop_gametes, Z_list, nb_graph)
                 # time graph
             if t>=mod_t*nb_point and show_graph_t and dim :  
-                points = graph_t(X, t, prop_gametes, coef_gametes_couple, points, nb_point)
                 nb_point += 1
+                points = graph_t(X, t, prop_gametes, coef_gametes_couple, points, nb_point)
+                
     
     # last graph
-    if show_graph_fin :   
+    if show_graph_end :   
+        nb_graph += 1
         if dim == 1: graph_x(t, prop_gametes, X)
-        if dim == 2: graph_xy(t, prop_gametes)
+        if dim == 2: graph_xy(t, prop_gametes); Z_list = graph_xy_contour(t, prop_gametes, Z_list, nb_graph)
    
     # speed function of time 
     if CI != "equal" :
@@ -270,7 +276,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
 
 
 ############################### Graph and saving figures ######################################
-    
+
 # Proportion of allele in space at time t
 def graph_x(t, prop_gametes, X):
         fig, ax = plt.subplots()
@@ -306,21 +312,55 @@ def graph_x(t, prop_gametes, X):
         plt.show() 
         
         
-        
-        
+
 def graph_xy(t, prop_gametes):
     for allele_nb in np.arange(0,3):
         if [alleleA,alleleB,alleleCD][allele_nb] :
             allele_letter = ["A","B","C"][allele_nb]
+            heatmap_values = np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)).transpose()
             fig, ax = plt.subplots() 
-            im = ax.imshow(np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)).transpose(),cmap='Blues', aspect='auto', vmin=0, vmax=1)  
-            ax.figure.colorbar(im, ax=ax)     
+            im = ax.imshow(heatmap_values,cmap='Blues', aspect='auto', vmin=0, vmax=1)  
+            ax.figure.colorbar(im, ax=ax)   
             fig.suptitle(f"Allele {allele_letter} at time {np.round(t,2)}", fontsize=14)
             if save_fig :
                 save_fig_or_data(out_dir, fig, [], f"{allele_letter}_t_{t}")
-            plt.show()       
+            plt.show() 
     
-        
+def graph_xy_contour(t, prop_gametes, Z_list, nb_graph):
+    contour_threshold = 0.2
+    for allele_nb in np.arange(0,3):
+        if [alleleA,alleleB,alleleCD][allele_nb] :
+            allele_letter = ["A","B","C"][allele_nb]
+            heatmap_values = np.resize(np.dot(indexABCD[allele_nb,:],prop_gametes),(N+1,N+1)).transpose()
+            fig, ax = plt.subplots() 
+            g1 = lambda x,y: heatmap_values[int(y),int(x)] 
+            g2 = np.vectorize(g1)
+            x = np.linspace(0,heatmap_values.shape[1], 1001)[:-1]
+            y = np.linspace(0,heatmap_values.shape[0], 1001)[:-1]
+            X, Y= np.meshgrid(x,y)
+            Z = g2(X,Y)  
+            Z_list[nb_graph-1] = Z
+            #x = np.linspace(0,heatmap_values.shape[1], heatmap_values.shape[1]*100)
+            #y = np.linspace(0,heatmap_values.shape[0], heatmap_values.shape[0]*100)
+            #X, Y= np.meshgrid(x[:-1],y[:-1])
+            #Z = g2(X[:-1],Y[:-1])  
+            #Z_list[nb_graph-1] = Z[:,1:]
+            ax.set_aspect('equal', adjustable='box')
+            #im = ax.imshow(heatmap_values,cmap='Blues', aspect='auto', vmin=0, vmax=1)  
+            #ax.figure.colorbar(im, ax=ax)   
+            #ax.contour(np.arange(N+1), np.arange(N+1), heatmap_values, levels=[0.4]) 
+            for i in range(nb_graph) : 
+                label = f'{int(mod_x*i)}'
+                if i == nb_graph - 1 : label = f'{int(t)}'
+                contour = ax.contour(Z_list[i], [contour_threshold], colors=col_pink[i], linewidths=[line_size], extent=[0-0.5, x[:-1].max()-0.5,0-0.5, y[:-1].max()-0.5])
+                fmt = {}; fmt[contour_threshold] = label
+                ax.clabel(contour, np.ones(1)*contour_threshold, inline=True, fmt=fmt, fontsize=10) 
+            if save_fig :
+                save_fig_or_data(out_dir, fig, [], f"contour_{allele_letter}_t_{t}")
+            plt.show()   
+    return(Z_list)
+             
+
 # Proportion of allele in time at spatial site 'focus x'
 def graph_t(X, t, prop_gametes, coef_gametes_couple, values, nb_point):
     sumABCD = np.dot(indexABCD, prop_gametes)
@@ -419,18 +459,18 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
 # Numerical parameters
 dim = 2         # number of spatial dimensions (1 or 2)
-T = 300         # final time
-L = 100         # length of the spatial domain
-M = T*6         # number of time steps
-N = L           # number of spatial steps
+T = 400         # final time
+L = 80          # length of the spatial domain
+M = T*6        # number of time steps
+N = int(L*(1/1.5))         # number of spatial steps
 
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit   
                  
 # Initial repartition
-CI = "square_abcd"      # "equal"  "left_abcd" "left_cd" "left_cd_quater" "center_abcd" "center_cd" 
-CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_lenght = 20      # /!\ should be < L. For "center" and "square", lenght of the initial drive condition in the center (CI_lenght divisible by N and 2) 
+CI = "square_abcd"           # "equal"  "left_abcd" "left_cd" "center_abcd" "center_cd"   and 2D only : " square_abcd" "square_cd"
+CI_prop_drive = 1            # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
+CI_lenght = int((L/10)*(N/L))      # /!\ should be < N. For "center_abcd" and "center_cd", lenght of the initial drive condition in the center, in number of spatial steps.
 
             
 # Diffusion rate: constant or depending on m, dx and dt
@@ -440,7 +480,7 @@ cst_value = 0.2           # value of the constant diffusion rate or value of the
 # Graphics
 show_graph_x = True      # whether to show the graph in space or not
 show_graph_ini = True   # whether to show the allele graph or not at time t=0
-show_graph_fin = True    # whether to show the allele graph or not at time t=T
+show_graph_end = True    # whether to show the allele graph or not at time t=T
 
 show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
@@ -452,7 +492,7 @@ save_fig = True       # save the figures
 
 # Which alleles to show in the graph
 WT = False             
-alleleA = True; alleleB = alleleA; alleleCD = alleleA
+alleleA = False; alleleB = alleleA; alleleCD = True
 checkab = False; ab = checkab; AbaB = ab; AB = ab 
 checkcd = False; cd = checkcd; CdcD = cd; CD = cd
 
@@ -470,7 +510,7 @@ out_dir = f"cst_dim_{dim}_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_
 ############################### Evolution ########################################
  
 if show_speed_fct_of_spatial_step :
-    show_graph_x = False; show_graph_ini = False; show_graph_fin = False
+    show_graph_x = False; show_graph_ini = False; show_graph_end = False
     speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale)
 else : 
     prop, time, speed_fct_of_time = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x) 
@@ -485,7 +525,7 @@ if diffusion == 'cst m':  dt = T/M; dx = L/N; m = cst_value; dif = (m*dx**2)/(2*
 
 # Check ab
 if checkab : 
-    ab_,aB_,Ab_,AB_ = continuous_evolution_ab(r,sd,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_x,show_graph_x,ab,AbaB,AB)
+    ab_,aB_,Ab_,AB_ = continuous_evolution_ab(r,sd,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_end,mod_x,show_graph_x,ab,AbaB,AB)
     print('ab check :',(abs(ab_ - np.sum(prop[0:4], axis=0)) < 0.001)[0])
     print('aB check :',(abs(aB_ - np.sum(prop[4:8], axis=0)) < 0.001)[0])
     print('Ab check :',(abs(Ab_ - np.sum(prop[8:12], axis=0)) < 0.001)[0])
@@ -493,7 +533,7 @@ if checkab :
 
 # Check cd
 if checkcd :    
-    cd_,cD_,Cd_,CD_ = continuous_evolution_cd(r,sp,st,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_fin,mod_x,show_graph_x,cd,CdcD,CD)
+    cd_,cD_,Cd_,CD_ = continuous_evolution_cd(r,sp,st,dif,gamma,T,L,M,N,theta,CI,show_graph_ini,show_graph_end,mod_x,show_graph_x,cd,CdcD,CD)
     print('cd check :',(abs(cd_ - np.sum(prop[(0,4,8,12),:], axis=0)) < 0.001)[0])
     print('cD check :',(abs(cD_ - np.sum(prop[(1,5,9,13),:], axis=0)) < 0.001)[0])
     print('Cd check :',(abs(Cd_ - np.sum(prop[(2,6,10,14),:], axis=0)) < 0.001)[0])
@@ -502,6 +542,5 @@ if checkcd :
 ############################### Print parameters ########################################
 
 print('\nr = ',r,' sd =', sd, diffusion, cst_value,' gamma =',gamma, ' CI =', CI)
-print('T =',T,' L =',L,' M =',M,' N =',N,' theta =',theta, ' f0 =', CI_prop_drive)
-
+print('T =',T,' L =',L,' M =',M,' N =',N,' theta =',theta, ' f0 =', CI_prop_drive) 
 
