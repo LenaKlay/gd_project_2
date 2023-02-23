@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Aug 30 09:49:47 2021
-
-
-
 lena.klay@sorbonne-universite.fr
 """
 
@@ -149,7 +146,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
     # Evolution
     for t in np.linspace(dt,T,M) : 
         
-        t = round(t,2)
+        t = np.round(t,2)
         
         reaction_term = f(prop_gametes, coef_gametes_couple)[0]
   
@@ -198,11 +195,11 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
         if len(speed_fct_of_time) != 0 and show_graph_x :   
             fig, ax = plt.subplots() 
             if CI[0] == 'l':
-                ax.plot(time, speed_fct_of_time) 
+                ax.plot(time, speed_fct_of_time, color = "cornflowerblue") 
             if CI[0] == 'c':
-                ax.plot(time, -speed_fct_of_time) 
+                ax.plot(time, -speed_fct_of_time, color = "cornflowerblue") 
             plt.hlines(y=0, color='dimgray', xmin=time[0], xmax=time[-1])
-            ax.set(xlabel='Time', ylabel='Speed', ylim = [-0.1,1.7])   
+            ax.set(xlabel='Time', ylabel='Speed', ylim = [ymin_speed,ymax_speed])   
             #ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)  
             ax.grid()
             if save_fig :
@@ -229,7 +226,7 @@ def graph_x(X, t, prop_gametes):
             ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=line_size)
         for i in range(3) :
             if [alleleA,alleleB,alleleCD][i] :
-                lab = [r'$X_A$',r'$X_B$',r'$X_C/X_D$'][i]
+                lab = [r'$X_A$',r'$X_B$',r'$X_C$ or $X_D$'][i]
                 col = ['yellowgreen','orange','deeppink'][i]
                 ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=line_size)
             if [cd,CdcD,CD][i] :
@@ -248,11 +245,11 @@ def graph_x(X, t, prop_gametes):
         ax.axes.xaxis.set_ticklabels([])
         ax.set(xlabel='Space', ylabel='Frequency', ylim=[-0.02,1.02])   
         ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
-        ax.set_title(f"t = {t}", fontsize = title_size, loc='right')
+        ax.set_title(f"t = {int(t)}", fontsize = title_size, loc='right')
         plt.rc('legend', fontsize=legend_size)
         ax.legend()  
         if save_fig :
-            save_fig_or_data(out_dir, fig, [], f"t_{t}")   
+            save_fig_or_data(out_dir, fig, [], f"t_{int(t)}")   
         plt.show() 
         
 # Proportion of allele in time at spatial site 'focus x'
@@ -321,7 +318,7 @@ gamma = 0.9
 # Fitness disadvantage
 sd = 0.02
 st = 0.9
-sp = 0.1
+sp = 0.35
 
 # Coefficents for the reaction term
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
@@ -330,10 +327,10 @@ coef_gametes_couple = coef(sd,sp,st,gamma,r)
 # Initial repartition
 CI = "center_abcd"    # "equal"  "left_abcd" "left_cd" "center_abcd" "center_cd" 
 CI_prop_drive = 1   # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
-CI_lenght = 20      # /!\ should be < N. For "center_abcd" and "center_cd", lenght of the initial drive condition in the center, in number of spatial steps.
+CI_lenght = 20     # /!\ should be < N. For "center_abcd" and "center_cd", lenght of the initial drive condition in the center, in number of spatial steps.
 
 # Numerical parameters
-T = 600          # final time
+T = 1000          # final time
 L = 200          # length of the spatial domain
 M = T*10         # number of time steps
 theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
@@ -343,7 +340,7 @@ theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
 #X = np.linspace(0,L,201)   # homogeneous
 #X = np.concatenate((np.arange(0,L//2,1), np.arange(L//2, L+1,2)))   # heterogeneous half half
 #X = np.concatenate((np.arange(0,L//4,2),  np.arange(L//4,3*L//4,1), np.arange(3*L//4, L+1,2)))   # heterogeneous center step 1, outside step 2
-X = np.sort(np.random.random_sample(L*3)*L)     # heterogeneous randomized
+X = np.sort(np.random.random_sample(2*L)*L)     # heterogeneous randomized
             
 # Diffusion rate: constant or depending on m, dx and dt
 diffusion = 'cst dif'     # cst dif or cst m
@@ -359,9 +356,12 @@ show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T//4              # time at which to draw allele graphics
+mod_x = T//20             # time at which to draw allele graphics
 mod_t = T//50             # time points used to draw the graph in time
 save_fig = True           # save the figures (.pdf)
+
+ymin_speed = -0.4         # final graph (speed fct of time) : min y value
+ymax_speed = 0.4          # final graph (speed fct of time) : max y value
 
 # Which alleles to show in the graph
 WT = False             

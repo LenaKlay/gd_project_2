@@ -143,7 +143,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     # Evolution
     for t in np.linspace(dt,T,M) : 
         
-        t = round(t,2)
+        t = np.round(t,2)
         
         reaction_term = f(prop_gametes, coef_gametes_couple)[0]
   
@@ -189,8 +189,11 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     if CI != "equal" :
         if np.shape(position)[0] != 0 and show_graph_x :        
             fig, ax = plt.subplots()
-            ax.plot(time, speed_fct_of_time) 
-            ax.set(xlabel='Time', ylabel='Speed', ylim = [-0.25,0.5])             
+            if CI[0] == 'l':
+                ax.plot(time, speed_fct_of_time, color = "cornflowerblue") 
+            if CI[0] == 'c':
+                ax.plot(time, -speed_fct_of_time, color = "cornflowerblue")   
+            ax.set(xlabel='Time', ylabel='Speed', ylim = [ymin_speed, ymax_speed])             
             plt.hlines(y=0, color='dimgray', xmin=time[0], xmax=time[-1])
             ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
             #ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)
@@ -198,7 +201,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             plt.grid() 
             if save_fig :
                 save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")  
-                save_fig_or_data(out_dir, [], time, "time")                         
+                save_fig_or_data(out_dir, [], time, "time")                                  
             plt.show() 
         if np.shape(position)[0] == 0 :
             print('No wave')
@@ -224,7 +227,7 @@ def graph_x(X, t, prop_gametes):
             ax.plot(X, prop_gametes[0,:], color='green', label='WT', linewidth=line_size)
         for i in range(3) :
             if [alleleA,alleleB,alleleCD][i] :
-                lab = [r'$X_A$',r'$X_B$',r'$X_C/X_D$'][i]
+                lab = [r'$X_A$',r'$X_B$',r'$X_C$ or $X_D$'][i]
                 col = ['yellowgreen','orange','deeppink'][i]
                 ax.plot(X, np.dot(indexABCD[i,:],prop_gametes), color=col, label=lab, linewidth=line_size)
             if [cd,CdcD,CD][i] :
@@ -248,7 +251,7 @@ def graph_x(X, t, prop_gametes):
             #if len(num)==1: num = '0'+'0'+num
             #if len(num)==2: num = '0'+num
             #save_fig_or_data(out_dir, fig, [], f"{num}")
-            save_fig_or_data(out_dir, fig, [], f"t_{t}")  
+            save_fig_or_data(out_dir, fig, [], f"t_{int(t)}")  
         plt.show() 
         
 # Proportion of allele in time at spatial site 'focus x'
@@ -342,13 +345,13 @@ gamma = 0.9
 # Fitness disadvantage
 sd = 0.02
 st = 0.9
-sp = 0.1   # 0.1 pos, 0.5 neg
+sp = 0.27   # 0.1 pos, 0.5 neg
 
 # Coefficents for the reaction term
 coef_gametes_couple = coef(sd,sp,st,gamma,r)
 
 # Numerical parameters
-T = 600         # final time
+T = 100         # final time
 L = 200          # length of the spatial domain
 M = T*10         # number of time steps
 N = L*10         # number of spatial steps
@@ -357,7 +360,7 @@ theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit   
                  
 # Initial repartition
-CI = "left_abcd"             # "equal"  "left_abcd" "left_cd" "center_abcd" "center_cd" 
+CI = "equal"             # "equal"  "left_abcd" "left_cd" "center_abcd" "center_cd" 
 CI_prop_drive = 1            # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20*int(N/L)      # /!\ should be < N. For "center_abcd" and "center_cd", lenght of the initial drive condition in the center, in number of spatial steps.
 
@@ -375,9 +378,11 @@ show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T//4              # time at which to draw allele graphics
+mod_x = T//20              # time at which to draw allele graphics
 mod_t = T//50             # time points used to draw the graph in time
-save_fig = True       # save the figures
+save_fig = False           # save the figures
+ 
+
 
 # Which alleles to show in the graph
 WT = False             
@@ -433,4 +438,30 @@ if checkcd :
 print('\nr = ',r,' sd =', sd, diffusion, cst_value,' gamma =',gamma, ' CI =', CI)
 print('T =',T,' L =',L,' M =',M,' N =',N,' theta =',theta, ' f0 =', CI_prop_drive)
 
+
+
+figure_speed = False
+if figure_speed :     
+    speed_fct_of_time1 = np.loadtxt(f'../outputs/save3/sp035/homogeneous/speed_fct_time.txt')   # load first speed
+    speed_fct_of_time2 = np.loadtxt(f'../outputs/save3/sp035/heterogeneous/speed_fct_time.txt')   # load second speed
+    ymin_speed = -0.1         # final graph (speed fct of time) : min y value
+    ymax_speed = 0.4          # final graph (speed fct of time) : max y value   
+    fig, ax = plt.subplots()
+    if CI[0] == 'l':
+        ax.plot(time, speed_fct_of_time2, color = "mediumpurple")
+        ax.plot(time, speed_fct_of_time1, color = "cornflowerblue")         
+    if CI[0] == 'c':
+        ax.plot(time, -speed_fct_of_time1, color = "cornflowerblue", label = "homogeneous, top row", linewidth = line_size)  
+        ax.plot(time, -speed_fct_of_time2, color = "darkgreen", label = "heterogeneous, bottom row",  linewidth = line_size)
+        ax.plot(time, -speed_fct_of_time1, color = "cornflowerblue", linewidth = line_size)  
+    ax.set(xlabel='Time', ylabel='Speed', ylim = [ymin_speed, ymax_speed])             
+    plt.hlines(y=0, color='dimgray', xmin=time[0], xmax=time[-1])
+    ax.xaxis.label.set_size(label_size); ax.yaxis.label.set_size(label_size)   
+    #ax.set_title("Speed of the wave C or D function of time", fontsize = title_size)
+    plt.rc('legend', fontsize=legend_size)
+    plt.legend()
+    plt.grid() 
+    if save_fig :
+        save_fig_or_data(out_dir, fig, [], "speed_fct_time")                                   
+    plt.show() 
 
