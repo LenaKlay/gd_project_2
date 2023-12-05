@@ -25,9 +25,9 @@ line_size = 3
 ########################## External functions #######################################
 
 # Fitness, conversion, recombinaison...
-from steps import fitness
-from steps import f
-from steps import coef
+from terms import fitness
+from terms import f
+from terms import coef
 
 # To control the program through locus ab and loccus cd sums
 from control import continuous_evolution_ab
@@ -201,18 +201,15 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             plt.grid() 
             if save_fig :
                 save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")  
-                save_fig_or_data(out_dir, [], time, "time")                                  
+                save_fig_or_data(out_dir, [], time, "time")  
+                file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
+                file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
+                file.close()
             plt.show() 
         if np.shape(position)[0] == 0 :
             print('No wave')
-
     
     # speed_fct_of_time = np.loadtxt(f'../outputs/save2/wave/neg_abcd_2/speed_fct_time.txt')
-    
-    if show_graph_x : 
-        file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
-        file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
-        file.close()
    
     return(prop_gametes, time, speed_fct_of_time)  
 
@@ -360,7 +357,7 @@ theta = 0.5      # discretization in space : theta = 0.5 for Crank Nicholson
                  # theta = 0 for Euler Explicit, theta = 1 for Euler Implicit   
                  
 # Initial repartition
-CI = "equal"             # "equal"  "left_abcd" "left_cd" "center_abcd" "center_cd" 
+CI = "center_abcd"              # "equal"  "left_abcd" "left_cd" "center_abcd" "center_cd" 
 CI_prop_drive = 1            # Drive initial proportion in "ABCD_global"  "ABCD_left"  "ABCD_center" 
 CI_lenght = 20*int(N/L)      # /!\ should be < N. For "center_abcd" and "center_cd", lenght of the initial drive condition in the center, in number of spatial steps.
 
@@ -378,9 +375,9 @@ show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T//20              # time at which to draw allele graphics
+mod_x = T//5             # time at which to draw allele graphics
 mod_t = T//50             # time points used to draw the graph in time
-save_fig = False           # save the figures
+save_fig = True          # save the figures
  
 
 
@@ -396,6 +393,9 @@ step_min = 0.1
 step_max = 3 
 nb_step = 200
 log_scale = False
+ymin_speed = -0.1         # min y value
+ymax_speed = 0.4          # max y value   
+
 
 # Where to store the outputs
 out_dir = f"cst_r_{r}_gam_{gamma}_sd_{sd}_st_{st}_sp_{sp}_{diffusion}_{cst_value}_{CI}"
@@ -408,7 +408,8 @@ if show_speed_fct_of_spatial_step :
     speed_fct_of_spatial_step(step_min, step_max, nb_step, log_scale)
 else : 
     prop, time, speed_fct_of_time = continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x) 
-    print("Speed :",speed_fct_of_time[-1])
+    if CI !=  "equal" :
+        print("Speed :",speed_fct_of_time[-1])
     
 
 ############################### Control ########################################
@@ -442,10 +443,8 @@ print('T =',T,' L =',L,' M =',M,' N =',N,' theta =',theta, ' f0 =', CI_prop_driv
 
 figure_speed = False
 if figure_speed :     
-    speed_fct_of_time1 = np.loadtxt(f'../outputs/save3/sp035/homogeneous/speed_fct_time.txt')   # load first speed
-    speed_fct_of_time2 = np.loadtxt(f'../outputs/save3/sp035/heterogeneous/speed_fct_time.txt')   # load second speed
-    ymin_speed = -0.1         # final graph (speed fct of time) : min y value
-    ymax_speed = 0.4          # final graph (speed fct of time) : max y value   
+    speed_fct_of_time1 = np.loadtxt(f'../outputs/save/save3/sp035/homogeneous/speed_fct_time.txt')   # load first speed
+    speed_fct_of_time2 = np.loadtxt(f'../outputs/save/save3/sp035/heterogeneous/speed_fct_time.txt')   # load second speed
     fig, ax = plt.subplots()
     if CI[0] == 'l':
         ax.plot(time, speed_fct_of_time2, color = "mediumpurple")

@@ -29,9 +29,9 @@ col_blue = ['navy', 'blue','royalblue', 'cornflowerblue', 'lightskyblue']
 ########################## External functions #######################################
 
 # Fitness, conversion, recombinaison...
-from steps import fitness
-from steps import f
-from steps import coef
+from terms import fitness
+from terms import f
+from terms import coef
 
 # To control the program through locus ab and loccus cd sums
 from control import continuous_evolution_ab
@@ -259,7 +259,10 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
             plt.grid() 
             if save_fig :
                 save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")  
-                save_fig_or_data(out_dir, [], time, "time")                         
+                save_fig_or_data(out_dir, [], time, "time")  
+                file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
+                file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive} \ndim = {dim}") 
+                file.close()                          
             plt.show() 
         if np.shape(position)[0] == 0 :
             print('No wave')
@@ -267,11 +270,7 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,L,M,N,theta,mod_x):
     
     # speed_fct_of_time = np.loadtxt(f'../outputs/save2/wave/neg_abcd_2/speed_fct_time.txt')
     
-    if show_graph_x : 
-        file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
-        file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nL = {L} \nM = {M} \nN = {N} \ntheta = {theta} \nf0 = {CI_prop_drive} \ndim = {dim}") 
-        file.close()
-   
+
     return(prop_gametes, time, speed_fct_of_time)  
 
 

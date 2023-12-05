@@ -18,9 +18,9 @@ plt.rcParams.update({'font.family':'serif'})
 ########################## External functions #######################################
 
 # Fitness, conversion, recombinaison...
-from steps import fitness
-from steps import f
-from steps import coef
+from terms import fitness
+from terms import f
+from terms import coef
 
 ########################## Graph parameters #######################################
 
@@ -204,14 +204,14 @@ def continuous_evolution(r,sd,st,sp,cst_value,gamma,T,M,X,theta,mod_x):
             ax.grid()
             if save_fig :
                 save_fig_or_data(out_dir, fig, speed_fct_of_time, "speed_fct_time")   
-                save_fig_or_data(out_dir, [], time, "time")    
+                save_fig_or_data(out_dir, [], time, "time")   
+                file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
+                file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nM = {M} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
+                file.close()
             plt.show() 
         if np.shape(position)[0] == 0 :
             print('No wave')
         
-    file = open(f"../outputs/{out_dir}/parameters.txt", "w") 
-    file.write(f"Parameters : \nr = {r} \nsd = {sd} \nst = {st} \nsp = {sp} \n{diffusion} = {cst_value} \ngamma = {gamma} \nCI = {CI} \nT = {T} \nM = {M} \ntheta = {theta} \nf0 = {CI_prop_drive}") 
-    file.close()
     
     return(prop_gametes, time, speed_fct_of_time)  
 
@@ -356,7 +356,7 @@ show_graph_t = False      # whether to show the graph in time or not
 graph_t_type = "ABCD"     # "fig4" or "ABCD"
 focus_x = 20              # where to look, on the x-axis (0 = center)
 
-mod_x = T//20             # time at which to draw allele graphics
+mod_x = T//5              # time at which to draw allele graphics
 mod_t = T//50             # time points used to draw the graph in time
 save_fig = True           # save the figures (.pdf)
 
