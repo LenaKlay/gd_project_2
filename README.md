@@ -21,5 +21,3 @@ This Github repository is composed of several folders:
 3) `Illustrations` contains important illustrations, usually improved with Inkscape.
 
 4) `Migale` contains the code to run the heaviest simulations on the cluster Migale (INRAE, doi: 10.15454/1.5572390655343293E12) as well as some outputs of previous simulations.
-
-5) `Mathematica` contains a mathematica file with mathematical analyses.
