@@ -1,6 +1,6 @@
 # Modelling daisy quorum drive: a temporary bridge across engineered fitness valleys 
 
-This code is associated with the article <https://doi.org/10.1371/journal.pgen.1011262>. It simulates the spatial and temporal spread of the "daisy quorum drive", a construct that links a self-exhausting daisy-chain gene drive (see <https://doi.org/10.1073/pnas.1716358116>) with a fitness-valley construct, here a two-locus toxin-antidote system (see <https://doi.org/10.1006/jtbi.2001.2357>). The daisy quorum drive was proposed conceptually by Min et al. <https://doi.org/10.1101/115618> as a promising new approach to reduce the risks of spillovers while maintaining a low introduction threshold.
+This code is associated with article <https://doi.org/10.1371/journal.pgen.1011262>. It simulates the spatial and temporal spread of the "daisy quorum drive", a construct that links a self-exhausting daisy-chain gene drive (see <https://doi.org/10.1073/pnas.1716358116>) with a fitness-valley construct, here a two-locus toxin-antidote system (see <https://doi.org/10.1006/jtbi.2001.2357>). The daisy quorum drive was proposed conceptually by Min et al. <https://doi.org/10.1101/115618> as a promising new approach to reduce the risks of spillovers while maintaining a low introduction threshold.
 
 ## Authors
 
